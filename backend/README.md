@@ -1,25 +1,25 @@
-# Project Management SaaS --- Backend
+# Project Management SaaS — Backend
 
 Backend API for a Project Management SaaS application built with Bun,
-TypeScript, Express, PostgreSQL, and Dbmate.
+TypeScript, Express 5, PostgreSQL and Prisma.
 
 ## Tech Stack
 
--   Bun
--   TypeScript
--   Express
--   PostgreSQL
--   `pg`
--   Zod
--   JWT
--   bcrypt
--   Dbmate
+- Bun (runtime and package manager)
+- TypeScript
+- Express 5
+- PostgreSQL
+- Prisma 7 with the `@prisma/adapter-pg` driver adapter
+- Zod (validation)
+- JWT in an httpOnly cookie
+- bcrypt
+- dbmate (SQL migrations, run outside this repo)
 
 ## Architecture
 
 The backend follows a layered architecture:
 
-``` text
+```text
 HTTP Request
      ↓
    Route
@@ -30,77 +30,92 @@ HTTP Request
      ↓
  Repository
      ↓
+   Prisma
+     ↓
  PostgreSQL
 ```
 
 ### Responsibilities
 
--   **Routes** --- Define API endpoints.
--   **Controllers** --- Handle HTTP requests and responses.
--   **Services** --- Contain business logic.
--   **Repositories** --- Contain PostgreSQL queries.
--   **Middleware** --- Authentication, validation, and error handling.
--   **Types/Schemas** --- TypeScript types and request validation.
+- **Routes** — Define API endpoints and attach `requireAuth`.
+- **Controllers** — Parse and validate `req.params`, `req.body` and
+  `req.userId` with Zod, then call services. Controllers never touch Prisma.
+- **Services** — Contain business logic and all authorization checks. They
+  throw `ApiError`.
+- **Repositories** — The only layer that calls Prisma. Use explicit `select`
+  sets so internal fields are not returned.
+- **Middleware** — Authentication and global error handling.
+- **Types/Schemas** — TypeScript types and Zod request validation.
+
+Express 5 forwards rejected async handlers automatically, so controllers
+`throw new ApiError(...)` directly — there is no `asyncHandler` wrapper and no
+`next(err)` plumbing.
 
 ## Project Structure
 
-``` text
+```text
 backend/
 │
 ├── src/
-│   ├── app.ts
-│   ├── server.ts
-│   │
-│   ├── config/
-│   │   └── env.ts
+│   ├── app.ts                  # Express app, CORS, routers, error middleware
+│   ├── server.ts               # connectDB() then app.listen()
 │   │
 │   ├── db/
-│   │   └── pool.ts
+│   │   └── prisma.ts           # shared PrismaClient + connectDB()
+│   │
+│   ├── generated/prisma/       # generated Prisma client (committed)
 │   │
 │   ├── middleware/
-│   │   ├── auth.middleware.ts
-│   │   ├── error.middleware.ts
-│   │   └── validate.middleware.ts
+│   │   ├── auth.middleware.ts  # requireAuth
+│   │   └── error-middleware.ts # global error handler
 │   │
 │   ├── modules/
 │   │   ├── auth/
 │   │   ├── users/
-│   │   ├── projects/
-│   │   │   └── members/
-│   │   └── tasks/
+│   │   └── projects/           # also holds members and tasks
 │   │
 │   ├── utils/
+│   │   ├── api-error.ts
+│   │   ├── api-response.ts
 │   │   ├── jwt.ts
 │   │   ├── password.ts
-│   │   └── response.ts
+│   │   ├── prisma-error.ts
+│   │   └── project-member.authorization.ts
 │   │
 │   └── types/
-│       └── express.d.ts
+│       ├── express.d.ts        # req.userId augmentation
+│       └── global.types.ts     # shared UUID schema
 │
-├── db/
-│   └── migrations/
+├── prisma/
+│   └── schema.prisma           # introspected from the database
 │
-├── tests/
-│
+├── prisma.config.ts
 ├── .env
-├── .env.example
-├── .gitignore
 ├── package.json
 ├── tsconfig.json
 └── README.md
 ```
 
+Each module follows the same file layout:
+`<name>.routes.ts`, `<name>.controller.ts`, `<name>.service.ts`,
+`<name>.repository.ts`, `<name>.schema.ts`, `<name>.types.ts`.
+
+Project members and tasks are **not** separate modules. Their routes,
+controllers, services and repository functions all live inside
+`src/modules/projects/`. The `src/modules/project-members/` and
+`src/modules/tasks/` directories are empty placeholders.
+
 ## Database
 
 PostgreSQL database:
 
-``` text
+```text
 project-management-sass
 ```
 
 Main tables:
 
-``` text
+```text
 users
   │
   ├── user_profiles
@@ -116,36 +131,31 @@ users
 
 ### Tables
 
--   `users`
--   `user_profiles`
--   `projects`
--   `project_members`
--   `tasks`
+- `users`
+- `user_profiles`
+- `projects`
+- `project_members`
+- `tasks`
+- `schema_migrations` (owned by dbmate)
 
 ### Enums
 
--   `project_status`
-    -   `active`
-    -   `completed`
-    -   `archived`
--   `task_status`
-    -   `pending`
-    -   `in_progress`
-    -   `completed`
-    -   `cancelled`
--   `member_role`
-    -   `owner`
-    -   `admin`
-    -   `member`
+- `project_status` — `active`, `completed`, `archived`
+- `task_status` — `pending`, `in_progress`, `completed`, `cancelled`
+- `member_role` — `owner`, `admin`, `member`
 
 ## Environment Variables
 
 Create a `.env` file:
 
-``` env
-DATABASE_URL=postgres://postgres:YOUR_PASSWORD@localhost:5432/project-management-sass?sslmode=disable
+```env
 PORT=3000
+DATABASE_URL=postgres://postgres:YOUR_PASSWORD@localhost:5432/project-management-sass?sslmode=disable
+JWT_SECRET=your_secret
 ```
+
+`JWT_SECRET` is read when `src/utils/jwt.ts` is first imported and throws if it
+is missing, so the server will not boot without it.
 
 Never commit `.env` to Git.
 
@@ -153,95 +163,79 @@ Never commit `.env` to Git.
 
 Install dependencies:
 
-``` bash
+```bash
 bun install
 ```
 
-Start the development server:
+Start the development server (watch mode):
 
-``` bash
+```bash
 bun run dev
 ```
 
-Run the production server:
+Run the server:
 
-``` bash
+```bash
 bun run start
 ```
 
 Type-check the project:
 
-``` bash
+```bash
 bun run typecheck
 ```
 
-## Database Migrations
+`typecheck` is the only build step — `tsconfig.json` sets `noEmit`, and Bun
+executes the TypeScript sources directly.
 
-Check migration status:
+## Prisma Workflow
 
-``` bash
-dbmate status
+`prisma/schema.prisma` is **introspected from the database**, not authored by
+hand. There is no `prisma/migrations/` directory; schema changes are applied to
+PostgreSQL with dbmate, then pulled back into the schema file.
+
+```bash
+bunx prisma db pull    # re-introspect the database into prisma/schema.prisma
+bunx prisma generate   # regenerate the client into src/generated/prisma
 ```
 
-Run migrations:
+The generated client is committed and imported by relative path
+(`../generated/prisma/client`), **not** from `@prisma/client`. Regenerate and
+commit it whenever the schema changes.
 
-``` bash
-dbmate up
-```
+## API Responses
 
-Rollback the latest migration:
+Every response uses the same envelope, produced by `ApiResponse` on success and
+`ApiError` on failure:
 
-``` bash
-dbmate down
-```
-
-Create a migration:
-
-``` bash
-dbmate new migration_name
-```
-
-## Health Check
-
-The backend exposes:
-
-``` http
-GET /health
-```
-
-Expected response:
-
-``` json
+```json
 {
   "success": true,
-  "message": "API and database are working",
-  "databaseTime": "..."
+  "statusCode": 200,
+  "message": "Projects fetched successfully",
+  "data": {},
+  "errors": []
 }
 ```
 
-This verifies that:
+`errorMiddleware` resolves errors in this order:
 
-``` text
-Client
-  ↓
-Express
-  ↓
-pg
-  ↓
-PostgreSQL
-```
-
-is working.
+1. Prisma known-request errors via `handlePrismaError`
+   (`P2002` → 409, `P2003` → 409, `P2025` → 404)
+2. `ApiError` instances thrown by services and controllers
+3. Anything else → generic 500
 
 ## API Endpoints
 
+All routes are mounted under `/api/v1`.
+
 ### Authentication
 
-``` http
-POST /api/auth/register
-POST /api/auth/login
-POST /api/auth/logout
-GET  /api/auth/me
+```http
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+POST /api/v1/auth/logout
+GET  /api/v1/auth/me
 ```
 
 ### Users
@@ -249,167 +243,133 @@ GET  /api/auth/me
 User profile information is returned together with the user. There is no
 separate profile API.
 
-``` http
-GET    /api/users
-GET    /api/users/:userId
-PATCH  /api/users/:userId
-DELETE /api/users/:userId
+```http
+GET    /api/v1/users
+GET    /api/v1/users/:id
+PATCH  /api/v1/users/:id
+DELETE /api/v1/users/:id
 ```
 
 ### Projects
 
-``` http
-GET    /api/projects
-POST   /api/projects
-GET    /api/projects/:projectId
-PATCH  /api/projects/:projectId
-DELETE /api/projects/:projectId
+```http
+GET    /api/v1/projects
+POST   /api/v1/projects
+GET    /api/v1/projects/:id
+PATCH  /api/v1/projects/:id
+DELETE /api/v1/projects/:id
 ```
 
 ### Project Members
 
-Project members are kept inside the projects module.
-
-``` http
-GET    /api/projects/:projectId/members
-POST   /api/projects/:projectId/members
-PATCH  /api/projects/:projectId/members/:userId
-DELETE /api/projects/:projectId/members/:userId
+```http
+GET    /api/v1/projects/:projectId/members
+GET    /api/v1/projects/:projectId/members/:userId
+POST   /api/v1/projects/:projectId/members
+PUT    /api/v1/projects/:projectId/members/:userId
+DELETE /api/v1/projects/:projectId/members/:userId
 ```
 
 ### Tasks
 
-``` http
-GET    /api/projects/:projectId/tasks
-POST   /api/projects/:projectId/tasks
+Tasks are addressed through their project. The route parameter is spelled
+`:tasksId`.
 
-GET    /api/tasks/:taskId
-PATCH  /api/tasks/:taskId
-DELETE /api/tasks/:taskId
+```http
+GET    /api/v1/projects/:projectId/tasks
+GET    /api/v1/projects/:projectId/tasks/:tasksId
+POST   /api/v1/projects/:projectId/tasks
+PUT    /api/v1/projects/:projectId/tasks/:tasksId
+DELETE /api/v1/projects/:projectId/tasks/:tasksId
 ```
 
 ## Authentication Flow
 
-``` text
-Register
+Register:
+
+```text
+Validate input (Zod)
    ↓
-Validate input
+Reject duplicate email (409)
    ↓
-Hash password with bcrypt
+Hash password with bcrypt (12 salt rounds)
    ↓
 Create user
-   ↓
-Create profile
 ```
 
 Login:
 
-``` text
+```text
 Email + Password
        ↓
-Find User
+Find user by email
        ↓
-Compare Password
+Compare password hash
        ↓
-Generate JWT
+Sign JWT { sub: userId, type: "access" }, 1 day
        ↓
-Return Token
+Set httpOnly cookie "accessToken"
 ```
 
 Protected request:
 
-``` text
-Authorization: Bearer <JWT>
+```text
+Cookie: accessToken=<JWT>
                 ↓
         auth.middleware.ts
                 ↓
            Verify JWT
                 ↓
-            req.user
+            req.userId
 ```
 
-## Development Plan
+The token travels in an httpOnly cookie, not an `Authorization` header. CORS is
+configured for `http://localhost:5173` with `credentials: true`, so the frontend
+must send requests with credentials enabled.
 
-### Day 1 --- Foundation + Users
+## Authorization Model
 
--   Project structure
--   PostgreSQL connection
--   Health check
--   User CRUD
--   User + profile response
+A project has both an `owner_id` column and rows in `project_members`. The owner
+is identified by `projects.owner_id` and is normally **not** present in
+`project_members`, so permission checks must consider both.
 
-### Day 2 --- Authentication
+Rules currently enforced:
 
--   Register
--   Login
--   Logout
--   JWT
--   Password hashing
--   Current user
+- Only the owner can update or delete a project.
+- Owner and admins can add members and change member roles.
+- The owner's membership cannot be modified or removed.
+- A member can remove themselves from a project.
+- Any member can read project tasks.
+- A member can update a task they are assigned to; only owner and admins can
+  change `assigned_to` or `priority`.
+- Only owner and admins can delete tasks.
 
-### Day 3 --- Projects
-
--   Create project
--   List projects
--   Get project
--   Update project
--   Delete project
-
-### Day 4 --- Project Members
-
--   Add member
--   List members
--   Change role
--   Remove member
-
-### Day 5 --- Tasks
-
--   Create task
--   List project tasks
--   Get task
--   Update task
--   Delete task
--   Assign task
-
-### Day 6 --- Security & Quality
-
--   Authentication middleware
--   Authorization
--   Zod validation
--   Global error handling
--   Consistent API responses
-
-### Day 7 --- Testing & Documentation
-
--   Test all endpoints
--   Test authentication
--   Test permissions
--   Test database migrations
--   Clean up code
--   Complete documentation
+Task handlers use the `requireProjectRole(projectId, userId, allowedRoles)`
+helper in `src/utils/project-member.authorization.ts`. Older project and member
+handlers still inline their own owner/member checks; new code should use the
+helper.
 
 ## API Design Rule
 
 Use nested routes when working with resources belonging to a project:
 
-``` text
-/api/projects/:projectId/tasks
-/api/projects/:projectId/members
+```text
+/api/v1/projects/:projectId/tasks
+/api/v1/projects/:projectId/members
 ```
 
-Use direct resource routes when working with a specific resource:
+Use direct resource routes when addressing a specific resource:
 
-``` text
-/api/tasks/:taskId
-/api/users/:userId
-/api/projects/:projectId
+```text
+/api/v1/projects/:projectId
+/api/v1/users/:id
 ```
 
 ## Development Priority
 
 Build one complete vertical slice at a time:
 
-``` text
+```text
 Database
    ↓
 Repository
@@ -425,17 +385,36 @@ API Test
 
 Do not add advanced features until the core modules are stable.
 
+## Status
+
+Completed:
+
+- Users CRUD with profile
+- Authentication (register, login, logout, current user, JWT cookie)
+- Projects CRUD
+- Project members CRUD
+- Project tasks CRUD
+- Zod validation, global error handling, consistent API responses
+
+Known gaps:
+
+- The `/api/v1/users` routes authenticate but do not authorize: any logged-in
+  user can update or delete any other user. They need an ownership check
+  against `req.userId`.
+- No `/health` endpoint.
+- No test suite; `src/tests/` is an empty placeholder and no test runner,
+  linter or formatter is configured.
+
 ## Future Features
 
-These are intentionally outside the initial one-week MVP:
+Intentionally outside the initial MVP:
 
--   Comments
--   Notifications
--   File attachments
--   Activity logs
--   Real-time updates
--   WebSockets
--   Redis
--   Background jobs
--   Email notifications
--   Advanced analytics
+- Comments
+- Notifications
+- File attachments
+- Activity logs
+- Real-time updates / WebSockets
+- Redis
+- Background jobs
+- Email notifications
+- Advanced analytics
