@@ -17,27 +17,32 @@ import {
   getAllProjectTasksService,
   getProjectTaskService,
 } from "./projects.service";
-import { UUIDSchema } from "../../types/global.types";
-import { ApiError, ApiResponse } from "../../utils";
+import { ApiResponse } from "../../utils";
 import {
-  createProjectSchema,
-  updateProjectSchema,
-  addMemberSchema,
-  updateMemberRoleSchema,
-  createTasksSchema,
-  updateTaskSchema,
-  taskParamsSchema,
+  requireUserId,
+  validatedBody,
+  validatedParams,
+} from "../../middleware";
+import type {
+  CreateProjectInput,
+  UpdateProjectInput,
+  addMemberInput,
+  updateMemberRoleInput,
+  createTaskInput,
+  updateTaskInput,
+  ProjectIdParam,
+  ProjectScopedParam,
+  MemberParams,
+  TaskParams,
 } from "./project.schema";
-import prisma from "../../db/prisma";
+
+// Request params and bodies are validated by `validate()` in projects.routes.ts,
+// so every handler below reads already-parsed, correctly typed values.
 
 async function getAllProjects(req: Request, res: Response) {
-  const result = UUIDSchema.safeParse({ id: req.userId });
+  const userId = requireUserId(req);
 
-  if (!result.success) {
-    throw new ApiError(402, "Invalid Id");
-  }
-
-  const projects = await getAllProjectService(result.data.id);
+  const projects = await getAllProjectService(userId);
 
   return res
     .status(200)
@@ -45,59 +50,35 @@ async function getAllProjects(req: Request, res: Response) {
 }
 
 async function getProjectById(req: Request, res: Response) {
-  const id = req.params.id;
-  const result = UUIDSchema.safeParse({ id });
+  const userId = requireUserId(req);
+  const { id } = validatedParams<ProjectIdParam>(req);
 
-  if (!result.success) {
-    throw new ApiError(402, "Invalid Id");
-  }
-
-  const project = await getProjectByIdService(result.data.id, req.userId);
+  const project = await getProjectByIdService(id, userId);
 
   return res
     .status(200)
     .json(new ApiResponse(200, project, "Project fetched successfully"));
 }
+
 async function createProject(req: Request, res: Response) {
-  const result = createProjectSchema.safeParse(req.body);
-  const userId = UUIDSchema.safeParse({ id: req.userId });
+  const userId = requireUserId(req);
+  const body = validatedBody<CreateProjectInput>(req);
 
-  if (!userId.success) {
-    throw new ApiError(400, "Invalid User id");
-  }
-
-  if (!result.success) {
-    throw new ApiError(400, "Invalid input data");
-  }
-
-  const project = await createProjectService(userId.data.id, result.data);
+  const project = await createProjectService(userId, body);
 
   return res
     .status(201)
     .json(new ApiResponse(201, project, "Project created successfully"));
 }
+
 async function updateProject(req: Request, res: Response) {
-  const result = updateProjectSchema.safeParse(req.body);
-  const projectIdParseResult = UUIDSchema.safeParse({ id: req.params.id });
-  const reqUserIdResult = UUIDSchema.safeParse({ id: req.userId });
+  const userId = requireUserId(req);
+  const { id } = validatedParams<ProjectIdParam>(req);
+  const body = validatedBody<UpdateProjectInput>(req);
 
-  if (!projectIdParseResult.success) {
-    throw new ApiError(400, "Invalid project id");
-  }
-  if (!result.success) {
-    throw new ApiError(400, "Invalid input data");
-  }
-  if (!reqUserIdResult.success) {
-    throw new ApiError(400, "Invalid user id");
-  }
+  const updatedProject = await updateProjectService(id, userId, body);
 
-  const updatedProject = await updateProjectService(
-    projectIdParseResult.data.id,
-    reqUserIdResult.data.id,
-    result.data,
-  );
-
-  res
+  return res
     .status(200)
     .json(
       new ApiResponse(
@@ -107,35 +88,25 @@ async function updateProject(req: Request, res: Response) {
       ),
     );
 }
+
 async function deleteProject(req: Request, res: Response) {
-  const result = UUIDSchema.safeParse({ id: req.params.id });
-  const userResult = UUIDSchema.safeParse({ id: req.userId }); // Get user ID
+  const userId = requireUserId(req);
+  const { id } = validatedParams<ProjectIdParam>(req);
 
-  if (!result.success || !userResult.success) {
-    throw new ApiError(400, "Invalid id");
-  }
+  await deleteProjectService(id, userId);
 
-  await deleteProjectService(result.data.id, userResult.data.id);
   return res
     .status(200)
-    .json(new ApiResponse(200, null, "User deleted successfully"));
+    .json(new ApiResponse(200, null, "Project deleted successfully"));
 }
+
 async function getProjectStats(req: Request, res: Response) {}
 
 async function getProjectMembers(req: Request, res: Response) {
-  const projectIdParseResult = UUIDSchema.safeParse({
-    id: req.params.projectId,
-  });
-  const reqUserIdResult = UUIDSchema.safeParse({ id: req.userId });
+  const userId = requireUserId(req);
+  const { projectId } = validatedParams<ProjectScopedParam>(req);
 
-  if (!projectIdParseResult.success || !reqUserIdResult.success) {
-    throw new ApiError(400, "Invalid ID");
-  }
-
-  const members = await getProjectMembersService(
-    projectIdParseResult.data.id,
-    reqUserIdResult.data.id,
-  );
+  const members = await getProjectMembersService(projectId, userId);
 
   return res
     .status(200)
@@ -145,25 +116,10 @@ async function getProjectMembers(req: Request, res: Response) {
 }
 
 async function getProjectMember(req: Request, res: Response) {
-  const projectIdParseResult = UUIDSchema.safeParse({
-    id: req.params.projectId,
-  });
-  const reqUserIdResult = UUIDSchema.safeParse({ id: req.userId });
-  const userIdParseResult = UUIDSchema.safeParse({ id: req.params.userId });
+  const reqUserId = requireUserId(req);
+  const { projectId, userId } = validatedParams<MemberParams>(req);
 
-  if (
-    !projectIdParseResult.success ||
-    !reqUserIdResult.success ||
-    !userIdParseResult.success
-  ) {
-    throw new ApiError(400, "Invalid ID");
-  }
-
-  const member = await getProjectMemberService(
-    projectIdParseResult.data.id,
-    reqUserIdResult.data.id,
-    userIdParseResult.data.id,
-  );
+  const member = await getProjectMemberService(projectId, reqUserId, userId);
 
   return res
     .status(200)
@@ -171,25 +127,15 @@ async function getProjectMember(req: Request, res: Response) {
 }
 
 async function addProjectMember(req: Request, res: Response) {
-  const projectIdParseResult = UUIDSchema.safeParse({
-    id: req.params.projectId,
-  });
-  const reqUserIdResult = UUIDSchema.safeParse({ id: req.userId });
-  const bodyResult = addMemberSchema.safeParse(req.body);
-
-  if (!projectIdParseResult.success || !reqUserIdResult.success) {
-    throw new ApiError(400, "Invalid ID");
-  }
-
-  if (!bodyResult.success) {
-    throw new ApiError(400, "Invalid input data");
-  }
+  const reqUserId = requireUserId(req);
+  const { projectId } = validatedParams<ProjectScopedParam>(req);
+  const body = validatedBody<addMemberInput>(req);
 
   const newMember = await addMemberService(
-    projectIdParseResult.data.id,
-    reqUserIdResult.data.id,
-    bodyResult.data.user_id,
-    bodyResult.data.role,
+    projectId,
+    reqUserId,
+    body.user_id,
+    body.role,
   );
 
   return res
@@ -198,30 +144,15 @@ async function addProjectMember(req: Request, res: Response) {
 }
 
 async function updateProjectMemberRole(req: Request, res: Response) {
-  const projectIdParseResult = UUIDSchema.safeParse({
-    id: req.params.projectId,
-  });
-  const reqUserIdResult = UUIDSchema.safeParse({ id: req.userId });
-  const userIdParseResult = UUIDSchema.safeParse({ id: req.params.userId });
-  const bodyResult = updateMemberRoleSchema.safeParse(req.body);
-
-  if (
-    !projectIdParseResult.success ||
-    !reqUserIdResult.success ||
-    !userIdParseResult.success
-  ) {
-    throw new ApiError(400, "Invalid ID");
-  }
-
-  if (!bodyResult.success) {
-    throw new ApiError(400, "Invalid input data");
-  }
+  const reqUserId = requireUserId(req);
+  const { projectId, userId } = validatedParams<MemberParams>(req);
+  const body = validatedBody<updateMemberRoleInput>(req);
 
   const updatedMember = await updateMemberService(
-    projectIdParseResult.data.id,
-    reqUserIdResult.data.id,
-    userIdParseResult.data.id,
-    bodyResult.data.role,
+    projectId,
+    reqUserId,
+    userId,
+    body.role,
   );
 
   return res
@@ -236,25 +167,10 @@ async function updateProjectMemberRole(req: Request, res: Response) {
 }
 
 async function removeProjectMember(req: Request, res: Response) {
-  const projectIdParseResult = UUIDSchema.safeParse({
-    id: req.params.projectId,
-  });
-  const reqUserIdResult = UUIDSchema.safeParse({ id: req.userId });
-  const userIdParseResult = UUIDSchema.safeParse({ id: req.params.userId });
+  const reqUserId = requireUserId(req);
+  const { projectId, userId } = validatedParams<MemberParams>(req);
 
-  if (
-    !projectIdParseResult.success ||
-    !reqUserIdResult.success ||
-    !userIdParseResult.success
-  ) {
-    throw new ApiError(400, "Invalid ID");
-  }
-
-  await removeMemberService(
-    projectIdParseResult.data.id,
-    reqUserIdResult.data.id,
-    userIdParseResult.data.id,
-  );
+  await removeMemberService(projectId, reqUserId, userId);
 
   return res
     .status(200)
@@ -262,17 +178,10 @@ async function removeProjectMember(req: Request, res: Response) {
 }
 
 async function getProjectTasksController(req: Request, res: Response) {
-  const projectIdParseResult = UUIDSchema.safeParse({ id: req.params.projectId });
-  const reqUserIdResult = UUIDSchema.safeParse({ id: req.userId });
+  const userId = requireUserId(req);
+  const { projectId } = validatedParams<ProjectScopedParam>(req);
 
-  if (!projectIdParseResult.success || !reqUserIdResult.success) {
-    throw new ApiError(400, "Invalid ID");
-  }
-
-  const tasks = await getAllProjectTasksService(
-    projectIdParseResult.data.id,
-    reqUserIdResult.data.id
-  );
+  const tasks = await getAllProjectTasksService(projectId, userId);
 
   return res
     .status(200)
@@ -280,21 +189,10 @@ async function getProjectTasksController(req: Request, res: Response) {
 }
 
 async function getProjectTaskController(req: Request, res: Response) {
-  const paramsResult = taskParamsSchema.safeParse({
-    projectId: req.params.projectId,
-    taskId: req.params.tasksId,
-  });
-  const reqUserIdResult = UUIDSchema.safeParse({ id: req.userId });
+  const userId = requireUserId(req);
+  const { projectId, tasksId } = validatedParams<TaskParams>(req);
 
-  if (!paramsResult.success || !reqUserIdResult.success) {
-    throw new ApiError(400, "Invalid ID");
-  }
-
-  const task = await getProjectTaskService(
-    paramsResult.data.projectId,
-    reqUserIdResult.data.id,
-    paramsResult.data.taskId
-  );
+  const task = await getProjectTaskService(projectId, userId, tasksId);
 
   return res
     .status(200)
@@ -302,23 +200,11 @@ async function getProjectTaskController(req: Request, res: Response) {
 }
 
 async function createProjectTaskController(req: Request, res: Response) {
-  const projectIdParseResult = UUIDSchema.safeParse({ id: req.params.projectId });
-  const reqUserIdResult = UUIDSchema.safeParse({ id: req.userId });
-  const bodyResult = createTasksSchema.safeParse(req.body);
+  const userId = requireUserId(req);
+  const { projectId } = validatedParams<ProjectScopedParam>(req);
+  const body = validatedBody<createTaskInput>(req);
 
-  if (!projectIdParseResult.success || !reqUserIdResult.success) {
-    throw new ApiError(400, "Invalid ID");
-  }
-
-  if (!bodyResult.success) {
-    throw new ApiError(400, "Invalid input data");
-  }
-
-  const newTask = await createProjectTasksService(
-    projectIdParseResult.data.id,
-    reqUserIdResult.data.id,
-    bodyResult.data
-  );
+  const newTask = await createProjectTasksService(projectId, userId, body);
 
   return res
     .status(201)
@@ -326,26 +212,15 @@ async function createProjectTaskController(req: Request, res: Response) {
 }
 
 async function updateProjectTaskController(req: Request, res: Response) {
-  const paramsResult = taskParamsSchema.safeParse({
-    projectId: req.params.projectId,
-    taskId: req.params.tasksId,
-  });
-  const reqUserIdResult = UUIDSchema.safeParse({ id: req.userId });
-  const bodyResult = updateTaskSchema.safeParse(req.body);
-
-  if (!paramsResult.success || !reqUserIdResult.success) {
-    throw new ApiError(400, "Invalid ID");
-  }
-
-  if (!bodyResult.success) {
-    throw new ApiError(400, "Invalid input data");
-  }
+  const userId = requireUserId(req);
+  const { projectId, tasksId } = validatedParams<TaskParams>(req);
+  const body = validatedBody<updateTaskInput>(req);
 
   const updatedTask = await updateTasksService(
-    paramsResult.data.projectId,
-    reqUserIdResult.data.id,
-    paramsResult.data.taskId,
-    bodyResult.data
+    projectId,
+    userId,
+    tasksId,
+    body,
   );
 
   return res
@@ -354,21 +229,10 @@ async function updateProjectTaskController(req: Request, res: Response) {
 }
 
 async function deleteProjectTaskController(req: Request, res: Response) {
-  const paramsResult = taskParamsSchema.safeParse({
-    projectId: req.params.projectId,
-    taskId: req.params.tasksId,
-  });
-  const reqUserIdResult = UUIDSchema.safeParse({ id: req.userId });
+  const userId = requireUserId(req);
+  const { projectId, tasksId } = validatedParams<TaskParams>(req);
 
-  if (!paramsResult.success || !reqUserIdResult.success) {
-    throw new ApiError(400, "Invalid ID");
-  }
-
-  await deleteProjectTasksService(
-    paramsResult.data.projectId,
-    paramsResult.data.taskId,
-    reqUserIdResult.data.id
-  );
+  await deleteProjectTasksService(projectId, tasksId, userId);
 
   return res
     .status(200)

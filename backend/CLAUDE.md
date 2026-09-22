@@ -34,8 +34,8 @@ Every feature is a module under `src/modules/<name>/` with a strict four-layer s
 routes → controller → service → repository → prisma
 ```
 
-- **routes** — path + `requireAuth` only.
-- **controller** — parses/validates `req.params`, `req.body`, and `req.userId` with Zod, then calls services. Controllers do not touch `prisma`.
+- **routes** — path, `requireAuth`, and the `validate({ params, body, query })` middleware that declares the Zod schemas for that endpoint.
+- **controller** — reads the already-parsed values (`validatedParams<T>(req)`, `validatedBody<T>(req)`, `requireUserId(req)`) and calls services. Controllers no longer call `safeParse` themselves, and do not touch `prisma`.
 - **service** — all authorization and business rules live here, and services throw `ApiError`.
 - **repository** — the only layer that calls `prisma`; picks explicit `select` sets so password hashes and internals never leak.
 
@@ -49,9 +49,15 @@ The generated client is committed at `src/generated/prisma/` and imported by rel
 
 ### Errors and responses
 
+**`ERRORS.md` is the reference for the error contract** — envelope, status codes, `ErrorCode` table, and the rules for adding an endpoint. Read it before changing anything below.
+
 Express 5 forwards rejected async handlers automatically, so controllers `throw new ApiError(...)` instead of calling `next(err)` and there is no `asyncHandler` wrapper.
 
-`errorMiddleware` (last `app.use` in `src/app.ts`) resolves in order: Prisma known-request errors via `handlePrismaError` (P2002→409, P2003→409, P2025→404), then `ApiError`, then a generic 500. Every success path returns `new ApiResponse(status, data, message)`; both classes keep the same `{ success, statusCode, message, data, errors }` shape.
+`errorMiddleware` (last `app.use` in `src/app.ts`, preceded by `notFoundMiddleware`) resolves in order: `ApiError`, then `ZodError` via `handleZodError`, then Prisma errors via `handlePrismaError` (P2000/P2011→400, P2001/P2025→404, P2002→409, P2003/P2014→409, validation/panic→500, initialization→503), then body-parser errors (`entity.parse.failed`→400 `INVALID_JSON`, `entity.too.large`→413), then a generic 500. It is the only place an error becomes a response; nothing else calls `res.status(...).json(...)` on a failure path.
+
+Every error response carries `{ success, statusCode, code, message, data, errors, requestId }` plus `fieldErrors` on validation failures — `code` is a stable `ErrorCode` string (`src/utils/error-codes.ts`) that clients branch on. 5xx are logged with a stack; outside production the response also includes a `debug` block. Success paths return `new ApiResponse(status, data, message)`.
+
+Validation lives in `middleware/validate.middleware.ts`: it parses params, query and body in one pass so a request's problems are reported together, and `ValidationError` (`src/utils/zod-error.ts`) flattens Zod issues into `{ field, code, message }` entries plus a `fieldErrors` map keyed by dot path (`_root` for object-level issues). Body failures are 422, param/query failures 400. Every Zod rule must carry a human-written message, and every body schema is `.strict()`.
 
 ### Auth
 
@@ -79,6 +85,6 @@ GET|POST /api/v1/projects/:projectId/members    GET|PUT|DELETE .../members/:user
 GET|POST /api/v1/projects/:projectId/tasks      GET|PUT|DELETE .../tasks/:tasksId
 ```
 
-Note the task route param is spelled `:tasksId`. The `/api/v1/users` routes currently have **no** `requireAuth`, and the users repository returns full rows including `password_hash`. There is no `/health` endpoint.
+Note the task route param is spelled `:tasksId` — param schema keys must match it. Every route above is behind `requireAuth` except `auth/register`, `auth/login` and `auth/logout`. The users repository still returns full rows including `password_hash`. There is no `/health` endpoint. Unmatched paths return a JSON `404 ROUTE_NOT_FOUND` from `notFoundMiddleware`, and every request is tagged with an `X-Request-Id`.
 
 Nested routes for resources that belong to a project; flat routes for addressing a resource directly.

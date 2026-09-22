@@ -1,4 +1,3 @@
-import type { RawCreateParams } from "zod/v3";
 import { ApiError } from "../../utils";
 import type {
   CreateProjectInput,
@@ -29,7 +28,7 @@ async function getAllproject(userId: string) {
   const projects = await findAllProjects(userId);
 
   if (!projects) {
-    throw new ApiError(401, "Projects not found");
+    throw new ApiError(404, "Projects not found");
   }
 
   return projects;
@@ -39,7 +38,7 @@ async function getProjectById(projectId: string, userId: string) {
   const project = await findProjectById(projectId);
 
   if (!project) {
-    throw new ApiError(401, "Project not found");
+    throw new ApiError(404, "Project not found");
   }
 
   const isOwner = project.owner_id === userId;
