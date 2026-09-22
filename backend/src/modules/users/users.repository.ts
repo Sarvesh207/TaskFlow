@@ -1,11 +1,19 @@
 import prisma from "../../db/prisma";
 import type { UpdateUserInput } from "./users.schema";
 
+// Never select password_hash — these rows are returned straight to the client.
+const userSelect = {
+  id: true,
+  email: true,
+  full_name: true,
+  created_at: true,
+  updated_at: true,
+  profile: true,
+} as const;
+
 export async function findAllUsers() {
   const users = prisma.users.findMany({
-    include: {
-      profile: true,
-    },
+    select: userSelect,
     orderBy: {
       created_at: "desc",
     },
@@ -18,9 +26,7 @@ export async function findUser(id: string) {
     where: {
       id,
     },
-    include: {
-      profile: true,
-    },
+    select: userSelect,
   });
 }
 export async function updateUser(id: string, data: UpdateUserInput) {
@@ -49,9 +55,7 @@ export async function updateUser(id: string, data: UpdateUserInput) {
         },
       }),
     },
-    include: {
-      profile: true,
-    },
+    select: userSelect,
   });
 }
 

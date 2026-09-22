@@ -1,88 +1,141 @@
 import z from "zod";
-import { string } from "zod/v3";
+import { uuidParam } from "../../types/global.types";
 
-const createProjectSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, "Name must be at least 2 characters")
-    .max(100, "Name must be less than 100 characters"),
-  description: z.string().trim().optional(),
-  status: z.enum(["active", "completed", "archived"]).optional(),
-});
+const PROJECT_STATUSES = ["active", "completed", "archived"] as const;
+const MEMBER_ROLES = ["admin", "member"] as const;
+const TASK_STATUSES = ["completed", "pending", "in_progress"] as const;
+
+const projectName = z
+  .string("Name is required")
+  .trim()
+  .min(2, "Name must be at least 2 characters")
+  .max(100, "Name must be at most 100 characters");
+
+const projectDescription = z
+  .string("Description must be text")
+  .trim()
+  .max(2000, "Description must be at most 2000 characters");
+
+const projectStatus = z.enum(
+  PROJECT_STATUSES,
+  `Status must be one of: ${PROJECT_STATUSES.join(", ")}`,
+);
+
+const memberRole = z.enum(
+  MEMBER_ROLES,
+  `Role must be one of: ${MEMBER_ROLES.join(", ")}`,
+);
+
+const taskTitle = z
+  .string("Title is required")
+  .trim()
+  .min(2, "Title must be at least 2 characters")
+  .max(100, "Title must be at most 100 characters");
+
+const taskDescription = z
+  .string("Description must be text")
+  .trim()
+  .max(2000, "Description must be at most 2000 characters");
+
+const taskStatus = z.enum(
+  TASK_STATUSES,
+  `Status must be one of: ${TASK_STATUSES.join(", ")}`,
+);
+
+const taskPriority = z
+  .number("Priority must be a number")
+  .int("Priority must be a whole number")
+  .min(1, "Priority must be between 1 and 5")
+  .max(5, "Priority must be between 1 and 5");
+
+const dueDate = z
+  .string("Due date must be a string")
+  .date("Due date must be a calendar date in YYYY-MM-DD format")
+  .transform((value) => new Date(`${value}T00:00:00Z`));
+
+// ---------------------------------------------------------------- body schemas
+
+const createProjectSchema = z
+  .object({
+    name: projectName,
+    description: projectDescription.optional(),
+    status: projectStatus.optional(),
+  })
+  .strict();
 
 const updateProjectSchema = z
   .object({
-    name: z
-      .string()
-      .trim()
-      .min(2, "Name must be at least 2 characters")
-      .max(100, "Name must be less than 100 characters")
-      .optional(),
+    name: projectName.optional(),
+    description: projectDescription.optional(),
+    status: projectStatus.optional(),
+  })
+  .strict()
+  .refine((data) => Object.keys(data).length > 0, {
+    error: "Provide at least one field to update",
+  });
 
-    description: z.string().trim().optional(),
-
-    status: z.enum(["active", "completed", "archived"]).optional(),
+const addMemberSchema = z
+  .object({
+    user_id: uuidParam("user_id"),
+    role: memberRole.default("member"),
   })
   .strict();
 
-const addMemberSchema = z.object({
-  user_id: z.string().uuid("Invalid User ID"),
-  role: z.enum(["admin", "member"]).default("member"),
-});
+const updateMemberRoleSchema = z
+  .object({
+    role: memberRole,
+  })
+  .strict();
 
-const updateMemberRoleSchema = z.object({
-  role: z.enum(["admin", "member"]),
-});
-
-const createTasksSchema = z.object({
-  title: z
-    .string()
-    .trim()
-    .min(2, "Title must be at lease 2 characters")
-    .max(100, "Title must be at most 100 characters"),
-  description: z.string().trim().optional(),
-  status: z.enum(["completed", "pending", "in_progress"]).optional(),
-  priority: z.number().int().min(1).max(5).optional(),
-  due_date: z
-    .string()
-    .date()
-    .transform((value) => new Date(`${value}T00:00:00Z`))
-    .optional(),
-  assigned_to: z.uuid().nullable(),
-});
+const createTasksSchema = z
+  .object({
+    title: taskTitle,
+    description: taskDescription.optional(),
+    status: taskStatus.optional(),
+    priority: taskPriority.optional(),
+    due_date: dueDate.optional(),
+    assigned_to: uuidParam("assigned_to").nullable().optional(),
+  })
+  .strict();
 
 const updateTaskSchema = z
   .object({
-    title: z
-      .string()
-      .trim()
-      .min(2, "Title must be at least 2 characters")
-      .max(100, "Title must be at most 100 characters")
-      .optional(),
-
-    description: z.string().trim().nullable().optional(),
-
-    status: z.enum(["completed", "pending", "in_progress"]).optional(),
-
-    priority: z.number().int().min(1).max(5).optional(),
-
-    due_date: z
-      .string()
-      .date()
-      .transform((value) => new Date(`${value}T00:00:00Z`))
-      .nullable()
-      .optional(),
-
-    assigned_to: z.uuid().nullable().optional(),
+    title: taskTitle.optional(),
+    description: taskDescription.nullable().optional(),
+    status: taskStatus.optional(),
+    priority: taskPriority.optional(),
+    due_date: dueDate.nullable().optional(),
+    assigned_to: uuidParam("assigned_to").nullable().optional(),
   })
-  .strict();
+  .strict()
+  .refine((data) => Object.keys(data).length > 0, {
+    error: "Provide at least one field to update",
+  });
 
-const taskParamsSchema = z.object({
-  projectId: z.uuid(),
-  taskId: z.uuid(),
+// -------------------------------------------------------------- param schemas
+// Keys must match the route parameter names in projects.routes.ts.
+
+const projectIdParamSchema = z.object({
+  id: uuidParam("id"),
 });
 
+const projectScopedParamSchema = z.object({
+  projectId: uuidParam("projectId"),
+});
+
+const memberParamsSchema = z.object({
+  projectId: uuidParam("projectId"),
+  userId: uuidParam("userId"),
+});
+
+const taskParamsSchema = z.object({
+  projectId: uuidParam("projectId"),
+  tasksId: uuidParam("tasksId"),
+});
+
+type ProjectIdParam = z.infer<typeof projectIdParamSchema>;
+type ProjectScopedParam = z.infer<typeof projectScopedParamSchema>;
+type MemberParams = z.infer<typeof memberParamsSchema>;
 type TaskParams = z.infer<typeof taskParamsSchema>;
 type CreateProjectInput = z.infer<typeof createProjectSchema>;
 type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
@@ -98,6 +151,9 @@ export {
   updateMemberRoleSchema,
   createTasksSchema,
   updateTaskSchema,
+  projectIdParamSchema,
+  projectScopedParamSchema,
+  memberParamsSchema,
   taskParamsSchema,
 };
 
@@ -108,5 +164,8 @@ export type {
   updateMemberRoleInput,
   createTaskInput,
   updateTaskInput,
+  ProjectIdParam,
+  ProjectScopedParam,
+  MemberParams,
   TaskParams,
 };

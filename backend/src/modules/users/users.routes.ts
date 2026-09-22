@@ -5,15 +5,32 @@ import {
   getUserById,
   updateUser,
 } from "./users.controller";
-import { userIdSchema } from "./users.schema";
+import { userIdSchema, updateUserSchema } from "./users.schema";
+import { requireAuth, validate } from "../../middleware";
+
 const router = Router();
 
-router.get("/", getAllUsers);
+router.get("/", requireAuth, getAllUsers);
 
-router.get("/:id", getUserById);
+router.get(
+  "/:id",
+  requireAuth,
+  validate({ params: userIdSchema }),
+  getUserById,
+);
 
-router.delete("/:id", deleteUser);
+router.delete(
+  "/:id",
+  requireAuth,
+  validate({ params: userIdSchema }),
+  deleteUser,
+);
 
-router.patch("/:id", updateUser);
+router.patch(
+  "/:id",
+  requireAuth,
+  validate({ params: userIdSchema, body: updateUserSchema }),
+  updateUser,
+);
 
 export default router;
