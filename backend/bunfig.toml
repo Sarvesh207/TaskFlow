@@ -1,0 +1,3 @@
+[test]
+# Points DATABASE_URL at the "-test" database before anything imports Prisma.
+preload = ["./src/tests/preload.ts"]

@@ -49,9 +49,13 @@ export async function updateUser(id: string, data: UpdateUserInput) {
     },
     data: {
       ...userData,
+      // Registration doesn't create a profile row, so the first profile edit creates it.
       ...(Object.keys(userProfileData).length > 0 && {
         profile: {
-          update: userProfileData,
+          upsert: {
+            create: userProfileData,
+            update: userProfileData,
+          },
         },
       }),
     },

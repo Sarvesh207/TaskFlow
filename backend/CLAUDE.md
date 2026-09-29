@@ -20,7 +20,15 @@ bunx prisma generate  # regenerate client into src/generated/prisma after editin
 bunx prisma db pull   # re-introspect the DB into prisma/schema.prisma
 ```
 
-There is no test runner, linter, or formatter configured yet (`src/tests/` is an empty placeholder). Verification is `bun run typecheck` plus manually hitting endpoints.
+Tests (Bun's runner; see README "Testing"):
+
+```bash
+bun run test:db:setup     # once: create the "-test" database and push the schema
+bun run test              # unit (src/tests/unit), then integration (src/tests/integration)
+bun test src/tests/integration/tasks.test.ts   # a single file
+```
+
+The preload in `bunfig.toml` rewrites `DATABASE_URL` to the `-test` database and refuses any other; integration tests truncate every table before each test. Keep unit and integration as separate `bun test` runs — the service unit test uses `mock.module`, which is process-wide. There is no linter or formatter; verify with `bun run typecheck` and `bun run test`.
 
 Required `.env` (git-ignored): `PORT`, `DATABASE_URL`, `JWT_SECRET`. `JWT_SECRET` is read at module load in `src/utils/jwt.ts` and throws if missing, so the server won't boot without it.
 
@@ -61,9 +69,9 @@ Validation lives in `middleware/validate.middleware.ts`: it parses params, query
 
 ### Auth
 
-JWT in an **httpOnly cookie** named `accessToken` (not an `Authorization` header). `requireAuth` reads `req.cookies.accessToken`, verifies it, and sets `req.userId` (typed via the global augmentation in `src/types/express.d.ts`). Tokens are `{ sub: userId, type: "access" }`, 1 day; passwords are bcrypt with 12 salt rounds.
+JWT in an **httpOnly cookie** named `accessToken` (not an `Authorization` header). `requireAuth` reads `req.cookies.accessToken`, verifies it, and sets `req.userId` (typed via the global augmentation in `src/types/express.d.ts`). Tokens are `{ sub: userId, type: "access" }`, 1 day; passwords are bcrypt with 12 salt rounds (4 under `NODE_ENV=test`).
 
-CORS is hardcoded to `http://localhost:5173` with `credentials: true` for the (not yet built) frontend.
+CORS is hardcoded to `http://localhost:5173` with `credentials: true`; the frontend (`../frontend`) calls the API through Vite's same-origin `/api` proxy.
 
 ### Authorization model
 
@@ -71,7 +79,7 @@ Projects have an `owner_id` column *and* a `project_members` join table with a `
 
 Two styles coexist in `projects.service.ts`: the newer task handlers use the `requireProjectRole(projectId, userId, allowedRoles)` helper in `src/utils/project-member.authorization.ts`; the older project/member handlers inline `isOwner || isMember` checks against `findProjectById`. Prefer `requireProjectRole` for new code.
 
-Rules encoded today: only the owner may update/delete a project; owner+admin may add members, change roles, and delete tasks; the owner's own membership row cannot be modified or removed; a member may remove themselves; any member may update a task they're assigned to, but only owner/admin may change `assigned_to` or `priority`.
+Rules encoded today: only the owner may update/delete a project; owner+admin may add members, change roles, and delete tasks; the owner's own membership row cannot be modified or removed; a member may remove themselves; any member may update a task they're assigned to, but only owner/admin may change `assigned_to` or `priority`; on create, a plain member may assign the task only to themselves and may not set `priority`; an assignee (create or update) must be the owner or a `project_members` row (`requireAssignableUser`). Users may only `PATCH`/`DELETE` their own account (`/users/:id` → 403 otherwise).
 
 ## Routing
 
@@ -85,6 +93,6 @@ GET|POST /api/v1/projects/:projectId/members    GET|PUT|DELETE .../members/:user
 GET|POST /api/v1/projects/:projectId/tasks      GET|PUT|DELETE .../tasks/:tasksId
 ```
 
-Note the task route param is spelled `:tasksId` — param schema keys must match it. Every route above is behind `requireAuth` except `auth/register`, `auth/login` and `auth/logout`. The users repository still returns full rows including `password_hash`. There is no `/health` endpoint. Unmatched paths return a JSON `404 ROUTE_NOT_FOUND` from `notFoundMiddleware`, and every request is tagged with an `X-Request-Id`.
+Note the task route param is spelled `:tasksId` — param schema keys must match it. Every route above is behind `requireAuth` except `auth/register`, `auth/login` and `auth/logout`. The users repository selects explicit columns, so `password_hash` is never returned (an integration test enforces this). There is no `/health` endpoint. Unmatched paths return a JSON `404 ROUTE_NOT_FOUND` from `notFoundMiddleware`, and every request is tagged with an `X-Request-Id`.
 
 Nested routes for resources that belong to a project; flat routes for addressing a resource directly.

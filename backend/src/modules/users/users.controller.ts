@@ -6,7 +6,7 @@ import {
   deleteUser as deleteUserService,
 } from "./users.service";
 import { ApiResponse } from "../../utils";
-import { validatedBody, validatedParams } from "../../middleware";
+import { requireUserId, validatedBody, validatedParams } from "../../middleware";
 import type { UpdateUserInput, UserIdParam } from "./users.schema";
 
 // Params and bodies are validated by `validate()` in users.routes.ts.
@@ -30,10 +30,11 @@ export async function getUserById(req: Request, res: Response) {
 }
 
 export async function updateUser(req: Request, res: Response) {
+  const reqUserId = requireUserId(req);
   const { id } = validatedParams<UserIdParam>(req);
   const body = validatedBody<UpdateUserInput>(req);
 
-  const user = await updateUserService(id, body);
+  const user = await updateUserService(reqUserId, id, body);
 
   return res
     .status(200)
@@ -41,9 +42,10 @@ export async function updateUser(req: Request, res: Response) {
 }
 
 export async function deleteUser(req: Request, res: Response) {
+  const reqUserId = requireUserId(req);
   const { id } = validatedParams<UserIdParam>(req);
 
-  await deleteUserService(id);
+  await deleteUserService(reqUserId, id);
 
   return res
     .status(200)
