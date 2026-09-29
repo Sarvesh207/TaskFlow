@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#070709" />
+    <meta name="description" content="TaskFlow — turn ideas into real progress." />
+    <title>TaskFlow</title>
+    <!--
+      Apply the saved theme before first paint (no light/dark flash).
+      Keep in sync with src/features/theme/theme.ts (key "taskflow.theme", default "dark").
+    -->
+    <script>
+      (function () {
+        var root = document.documentElement
+        var pref = 'dark'
+        try {
+          var stored = localStorage.getItem('taskflow.theme')
+          if (stored === 'light' || stored === 'dark' || stored === 'system') pref = stored
+        } catch (e) {}
+        var dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        root.classList.toggle('dark', dark)
+        root.style.colorScheme = dark ? 'dark' : 'light'
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', dark ? '#070709' : '#f4f4f6')
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

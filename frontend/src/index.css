@@ -1,0 +1,280 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Theme tokens — values taken from takeuforward.org (resolved from its CSS in
+ * both themes). Light is the default; `.dark` on <html> switches everything.
+ * Components only use the semantic names below, so each works in both themes.
+ */
+:root {
+  --canvas: #f4f4f6;          /* bg-1: app background behind the panels */
+  --bg: #fcfcfd;              /* bg-2: sidebar / top bar / content panels */
+  --surface: #ffffff;         /* bg-3: cards */
+  --surface-2: #f7f7f8;       /* bg-contrast-4: raised controls, menus */
+  --surface-3: #eff2f6;       /* bg-5 */
+  --input: #ffffff;
+  --border: #e3e8ef;          /* stroke-default */
+  --border-soft: #e7ebf1;     /* stroke-divider */
+  --border-strong: #d3dae5;   /* stroke-strong */
+  --fg: #252a3c;              /* text-primary */
+  --fg-2: #556277;            /* text-secondary */
+  --muted: #64748b;           /* icon-default — AA contrast on white */
+  --subtle: #8a94a6;
+  --primary: #327cf6;         /* brand-primary */
+  --primary-hover: #1e6ef5;
+  --primary-pressed: #1559d6;
+  --primary-soft: #e8f0ff;    /* brand-primary-bg-2: active nav, selected */
+  --primary-soft-fg: #1e5fd8;
+  --hover: rgb(37 42 60 / 0.045);
+  --hover-strong: rgb(37 42 60 / 0.075);
+  --highlight: rgb(255 255 255 / 0.9);
+  --shadow-color: rgb(16 24 40 / 0.08);
+  color-scheme: light;
+}
+
+.dark {
+  --canvas: #070709;
+  --bg: #0f0f10;
+  --surface: #131316;
+  --surface-2: #1a1a1e;
+  --surface-3: #232329;
+  --input: #131316;
+  --border: #24272e;
+  --border-soft: #1e2128;
+  --border-strong: #343842;
+  --fg: #fcfcfd;
+  --fg-2: #c1c4cc;
+  --muted: #8d93a1;
+  --subtle: #646b78;
+  --primary: #327cf6;
+  --primary-hover: #4a8bf7;
+  --primary-pressed: #2468d8;
+  --primary-soft: #111827;
+  --primary-soft-fg: #6ea2fa;
+  --hover: rgb(255 255 255 / 0.045);
+  --hover-strong: rgb(255 255 255 / 0.075);
+  --highlight: rgb(255 255 255 / 0.04);
+  --shadow-color: rgb(0 0 0 / 0.55);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-border-soft: var(--border-soft);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-pressed: var(--primary-pressed);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-fg: var(--primary-soft-fg);
+  --color-primary-fg: #ffffff;
+  --color-hover: var(--hover);
+  --color-hover-strong: var(--hover-strong);
+}
+
+@theme {
+  /* Geist — the typeface takeuforward.org uses; Mono for figures. */
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --color-brand-from: #3b82f6;
+  --color-brand-to: #4f46e5;
+
+  /*
+   * Motion (review-animations / Emil Kowalski standards): strong ease-out only —
+   * never ease-in on UI — every UI animation under 300ms, and exits snap faster
+   * than entrances.
+   */
+  --ease-out-expo: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --animate-overlay-in: overlay-in 180ms var(--ease-out-expo);
+  --animate-overlay-out: overlay-out 120ms var(--ease-out-expo);
+  --animate-dialog-in: dialog-in 220ms var(--ease-out-expo);
+  --animate-dialog-out: dialog-out 140ms var(--ease-out-expo);
+  --animate-pop-in: pop-in 160ms var(--ease-out-expo);
+  --animate-pop-out: pop-out 110ms var(--ease-out-expo);
+  --animate-drawer-in: drawer-in 280ms var(--ease-drawer);
+  --animate-drawer-out: drawer-out 200ms var(--ease-drawer);
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-rise: rise 200ms var(--ease-out-expo) both;
+
+  @keyframes overlay-in {
+    from { opacity: 0; }
+  }
+  @keyframes overlay-out {
+    to { opacity: 0; }
+  }
+  @keyframes dialog-in {
+    from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+  @keyframes dialog-out {
+    from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    to { opacity: 0; transform: translate(-50%, -49%) scale(0.98); }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  }
+  @keyframes pop-out {
+    to { opacity: 0; transform: translateY(-2px) scale(0.98); }
+  }
+  @keyframes drawer-in {
+    from { transform: translateX(-100%); }
+  }
+  @keyframes drawer-out {
+    to { transform: translateX(-100%); }
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(4px); }
+  }
+  /* Auth hero photo eases in from a slight zoom. */
+  @keyframes hero-settle {
+    from { opacity: 0; transform: scale(1.06); }
+    to { opacity: 1; transform: scale(1); }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-canvas font-sans text-[14px] leading-normal text-fg antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "calt", "liga";
+  }
+
+  h1, h2, h3 {
+    text-wrap: balance;
+    letter-spacing: -0.018em;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    @apply bg-primary/25;
+  }
+
+  /* Set for one frame while the theme changes, so every colour swaps at once. */
+  .theme-switching *,
+  .theme-switching *::before,
+  .theme-switching *::after {
+    transition: none !important;
+  }
+
+  /* Thin, quiet scrollbars everywhere. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  select:not(:disabled) {
+    cursor: pointer;
+  }
+
+  /* Finer icon strokes read as precise rather than chunky. */
+  svg.lucide {
+    stroke-width: 1.75;
+  }
+
+  /* Native date picker icon is black by default on dark backgrounds. */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+  }
+}
+
+@utility text-brand-gradient {
+  background-image: linear-gradient(90deg, var(--color-brand-from), var(--color-brand-to));
+  background-clip: text;
+  color: transparent;
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+/* Surfaces get a 1px top highlight — reads as depth without heavy shadows. */
+@utility surface-highlight {
+  box-shadow:
+    inset 0 1px 0 0 var(--highlight),
+    0 1px 2px 0 var(--shadow-color);
+}
+
+/* Floating overlay panels (menus, dialogs, palette, toasts). */
+@utility elevated {
+  box-shadow:
+    0 18px 48px -12px var(--shadow-color),
+    0 2px 6px -2px var(--shadow-color),
+    inset 0 1px 0 var(--highlight);
+}
+
+/* Group entrances: children rise one after another (30–80ms apart). */
+@utility stagger {
+  & > * {
+    animation: rise 220ms var(--ease-out-expo) both;
+  }
+  & > *:nth-child(2) { animation-delay: 40ms; }
+  & > *:nth-child(3) { animation-delay: 80ms; }
+  & > *:nth-child(4) { animation-delay: 120ms; }
+  & > *:nth-child(n + 5) { animation-delay: 160ms; }
+}
+
+/*
+ * Film grain: a fixed, non-interactive noise layer that keeps flat dark
+ * surfaces from looking sterile. Fixed-position only, so scrolling stays cheap.
+ */
+@utility grain {
+  &::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+}
+
+/* Numbers that should not jiggle as they change. */
+@utility figures {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
