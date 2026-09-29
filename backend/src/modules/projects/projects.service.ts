@@ -1,4 +1,3 @@
-import type { RawCreateParams } from "zod/v3";
 import { ApiError } from "../../utils";
 import type {
   CreateProjectInput,
@@ -29,7 +28,7 @@ async function getAllproject(userId: string) {
   const projects = await findAllProjects(userId);
 
   if (!projects) {
-    throw new ApiError(401, "Projects not found");
+    throw new ApiError(404, "Projects not found");
   }
 
   return projects;
@@ -39,7 +38,7 @@ async function getProjectById(projectId: string, userId: string) {
   const project = await findProjectById(projectId);
 
   if (!project) {
-    throw new ApiError(401, "Project not found");
+    throw new ApiError(404, "Project not found");
   }
 
   const isOwner = project.owner_id === userId;
@@ -256,6 +255,19 @@ async function removeMemberService(
   await removeMemberFromProject(projectId, userId);
 }
 
+/** An assignee must be on the project: its owner, or a project_members row. */
+async function requireAssignableUser(
+  project: { id: string; owner_id: string },
+  assigneeId: string | null | undefined,
+) {
+  if (!assigneeId || assigneeId === project.owner_id) return;
+
+  const member = await getProjectMember(project.id, assigneeId);
+  if (!member) {
+    throw new ApiError(400, "Assigned user is not a member of this project");
+  }
+}
+
 async function createProjectTasksService(
   projectId: string,
   userId: string,
@@ -267,14 +279,29 @@ async function createProjectTasksService(
     throw new ApiError(404, "Project not found");
   }
   // 2. requsting user member of project
-  await requireProjectRole(projectId, userId, ["owner", "admin", "member"]);
-  // 3. check if tasks is assigning to user make sure assigning user member project
-  if (tasksData.assigned_to) {
-    const member = await getProjectMember(projectId, tasksData.assigned_to);
-    if (!member) {
-      throw new ApiError(400, "Assigned user is not a member of this project");
-    }
+  const requester = await requireProjectRole(projectId, userId, [
+    "owner",
+    "admin",
+    "member",
+  ]);
+
+  // 3. Plain members follow the same rules as on update: they may not set
+  //    priority, and may only assign the task to themselves.
+  const isPrivileged =
+    requester.role === "admin" || requester.role === "owner";
+  if (!isPrivileged && tasksData.priority !== undefined) {
+    throw new ApiError(403, "Only admins and owners can change task priority");
   }
+  if (
+    !isPrivileged &&
+    tasksData.assigned_to &&
+    tasksData.assigned_to !== userId
+  ) {
+    throw new ApiError(403, "Members can only assign tasks to themselves");
+  }
+
+  // 4. The assignee must be on the project.
+  await requireAssignableUser(project, tasksData.assigned_to);
   const task = createProjectTask(projectId, tasksData);
   return task;
 }
@@ -315,6 +342,8 @@ async function updateTasksService(
   if (!isPrivileged && taskData.priority !== undefined) {
     throw new ApiError(403, "Only admins and owners can change task priority");
   }
+
+  await requireAssignableUser(project, taskData.assigned_to);
 
   return updateProjectTask(taskId, taskData);
 }

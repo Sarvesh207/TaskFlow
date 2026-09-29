@@ -35,7 +35,16 @@ export async function getUser(id: string) {
   return user;
 }
 
-export async function updateUser(id: string, data: UpdateUserInput) {
+/** Accounts are self-service: a user may only change or delete their own. */
+function requireSelf(reqUserId: string, id: string) {
+  if (reqUserId !== id) {
+    throw ApiError.forbidden("You can only change your own account");
+  }
+}
+
+export async function updateUser(reqUserId: string, id: string, data: UpdateUserInput) {
+  requireSelf(reqUserId, id);
+
   const existingUser = await findUser(id);
 
   if (!existingUser) {
@@ -45,7 +54,9 @@ export async function updateUser(id: string, data: UpdateUserInput) {
   return updateUserRepository(id, data);
 }
 
-export async function deleteUser(id: string) {
+export async function deleteUser(reqUserId: string, id: string) {
+  requireSelf(reqUserId, id);
+
   const existingUser = await getUser(id);
 
   if (!existingUser) {

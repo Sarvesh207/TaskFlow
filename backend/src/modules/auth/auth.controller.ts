@@ -1,6 +1,7 @@
 import type { Response, Request } from "express";
-import { ApiError, ApiResponse } from "../../utils";
-import { userRegisterSchema, userLoginSchema } from "./auth.schema";
+import { ApiResponse } from "../../utils";
+import { requireUserId, validatedBody } from "../../middleware";
+import type { UserRegisterInput, UserLoginInput } from "./auth.schema";
 
 import {
   loginUserService,
@@ -8,14 +9,12 @@ import {
   getUserById,
 } from "./auth.service";
 
+// Bodies are validated by `validate()` in auth.routes.ts.
+
 export async function registerUser(req: Request, res: Response) {
-  const result = userRegisterSchema.safeParse(req.body);
+  const body = validatedBody<UserRegisterInput>(req);
 
-  if (!result.success) {
-    throw new ApiError(400, "Invalid registration data", result.error.issues);
-  }
-
-  const user = await registerUserService(result.data);
+  const user = await registerUserService(body);
 
   return res
     .status(201)
@@ -23,13 +22,9 @@ export async function registerUser(req: Request, res: Response) {
 }
 
 export async function loginUser(req: Request, res: Response) {
-  const result = userLoginSchema.safeParse(req.body);
+  const body = validatedBody<UserLoginInput>(req);
 
-  if (!result.success) {
-    throw new ApiError(400, "Invalid login data", result.error.issues);
-  }
-
-  const { accessToken, user } = await loginUserService(result.data);
+  const { accessToken, user } = await loginUserService(body);
 
   // set http-only cookies
 
@@ -52,7 +47,9 @@ export async function logoutUser(req: Request, res: Response) {
 }
 
 export async function getCurrentUser(req: Request, res: Response) {
-  const user = await getUserById(req.userId as string);
+  const userId = requireUserId(req);
+
+  const user = await getUserById(userId);
 
   return res
     .status(200)

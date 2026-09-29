@@ -5,8 +5,11 @@ import {
   updateUser as updateUserService,
   deleteUser as deleteUserService,
 } from "./users.service";
-import { ApiResponse, ApiError } from "../../utils";
-import { updateUserSchema, userIdSchema } from "./users.schema";
+import { ApiResponse } from "../../utils";
+import { requireUserId, validatedBody, validatedParams } from "../../middleware";
+import type { UpdateUserInput, UserIdParam } from "./users.schema";
+
+// Params and bodies are validated by `validate()` in users.routes.ts.
 
 export async function getAllUsers(req: Request, res: Response) {
   const users = await getAllUsersService();
@@ -17,12 +20,9 @@ export async function getAllUsers(req: Request, res: Response) {
 }
 
 export async function getUserById(req: Request, res: Response) {
-  const userid = req.params.id;
+  const { id } = validatedParams<UserIdParam>(req);
 
-  if (typeof userid !== "string") {
-    throw new ApiError(400, "Invalid user id");
-  }
-  const user = await getUserService(userid);
+  const user = await getUserService(id);
 
   return res
     .status(200)
@@ -30,19 +30,11 @@ export async function getUserById(req: Request, res: Response) {
 }
 
 export async function updateUser(req: Request, res: Response) {
-  const { id } = req.params;
+  const reqUserId = requireUserId(req);
+  const { id } = validatedParams<UserIdParam>(req);
+  const body = validatedBody<UpdateUserInput>(req);
 
-  if (typeof id !== "string") {
-    throw new ApiError(400, "Invalid user id");
-  }
-
-  const result = updateUserSchema.safeParse(req.body);
-
-  if (!result.success) {
-    throw new ApiError(400, "Invalid request data", result.error.issues);
-  }
-
-  const user = await updateUserService(id, result.data);
+  const user = await updateUserService(reqUserId, id, body);
 
   return res
     .status(200)
@@ -50,20 +42,10 @@ export async function updateUser(req: Request, res: Response) {
 }
 
 export async function deleteUser(req: Request, res: Response) {
-  const { id } = req.params;
+  const reqUserId = requireUserId(req);
+  const { id } = validatedParams<UserIdParam>(req);
 
-  const result = userIdSchema.safeParse(req.params);
-
-
-  if (!result.success) {
-    throw new ApiError(400, "Invalid user id");
-  }
-
-  if (typeof id !== "string") {
-    throw new ApiError(400, "Invalid user id");
-  }
-
-  await deleteUserService(id);
+  await deleteUserService(reqUserId, id);
 
   return res
     .status(200)

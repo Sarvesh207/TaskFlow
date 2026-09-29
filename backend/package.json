@@ -6,7 +6,13 @@
     "dev": "bun --watch src/server.ts",
     "start": "bun src/server.ts",
     "typecheck": "tsc -noEmit",
-    "postinstall": "prisma skills sync || exit 0"
+    "postinstall": "prisma skills sync || exit 0",
+    "test": "bun test src/tests/unit && bun test src/tests/integration",
+    "test:unit": "bun test src/tests/unit",
+    "test:integration": "bun test src/tests/integration",
+    "test:db:setup": "bun src/tests/scripts/setup-test-db.ts",
+    "test:db:reset": "bun src/tests/scripts/reset-test-db.ts",
+    "test:serve": "bun src/tests/scripts/serve-test.ts"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

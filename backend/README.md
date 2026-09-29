@@ -188,6 +188,32 @@ bun run typecheck
 `typecheck` is the only build step — `tsconfig.json` sets `noEmit`, and Bun
 executes the TypeScript sources directly.
 
+## Testing
+
+Bun's built-in runner; no extra dependencies. `bunfig.toml` preloads
+`src/tests/preload.ts`, which points `DATABASE_URL` at a separate database named
+after the dev one plus `-test` (override with `TEST_DATABASE_URL`) and refuses to
+run against any database whose name does not end in `-test`.
+
+```bash
+bun run test:db:setup     # once: create project-management-sass-test and push the schema
+bun run test              # unit, then integration
+bun run test:unit         # no database needed
+bun run test:integration  # real app on a random port + the test database
+```
+
+- `src/tests/unit/` — utils, schemas, middleware, and `projects.service` authorization
+  with the repository mocked (`mock.module` is process-wide, which is why unit and
+  integration run as separate `bun test` invocations).
+- `src/tests/integration/` — every route through HTTP; `beforeEach` truncates all tables.
+  Helpers: `startServer()`, a cookie-jar `TestClient`, and factories
+  (`registerAndLogin`, `createProject`, `addMember`, `createTask`).
+- `bun run test:serve` / `test:db:reset` run the server on the test DB for the
+  frontend's Playwright suite.
+- bcrypt uses 4 rounds when `NODE_ENV=test` (12 otherwise) to keep the suite fast.
+- `test:db:setup` never force-resets: tests clear their own rows. If a schema change
+  would lose data, drop the `-test` database by hand and rerun it.
+
 ## Prisma Workflow
 
 `prisma/schema.prisma` is **introspected from the database**, not authored by
@@ -395,15 +421,12 @@ Completed:
 - Project members CRUD
 - Project tasks CRUD
 - Zod validation, global error handling, consistent API responses
+- Test suite: unit + integration (`bun run test`)
 
 Known gaps:
 
-- The `/api/v1/users` routes authenticate but do not authorize: any logged-in
-  user can update or delete any other user. They need an ownership check
-  against `req.userId`.
 - No `/health` endpoint.
-- No test suite; `src/tests/` is an empty placeholder and no test runner,
-  linter or formatter is configured.
+- No linter or formatter is configured.
 
 ## Future Features
 

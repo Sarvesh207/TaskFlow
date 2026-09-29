@@ -1,6 +1,5 @@
-import z from "zod";
 import type { UserRegisterInput, UserLoginInput } from "./auth.schema";
-import { ApiError } from "../../utils";
+import { ApiError, ErrorCode } from "../../utils";
 import { findUserByEmail, createUser, findUserById } from "./auth.repository";
 import { comparePassword, hashPassword } from "../../utils/password";
 import { generateAccessToken } from "../../utils/jwt";
@@ -13,7 +12,10 @@ export async function registerUserService(data: UserRegisterInput) {
   const existingUser = await getUserByEmail(data.email);
 
   if (existingUser) {
-    throw new ApiError(409, "Email already registered");
+    throw new ApiError(409, "This email is already registered", [], {
+      code: ErrorCode.ALREADY_EXISTS,
+      fieldErrors: { email: ["This email is already registered"] },
+    });
   }
 
   const passwordHash = await hashPassword(data.password);
@@ -31,7 +33,9 @@ export async function loginUserService(data: UserLoginInput) {
   const user = await getUserByEmail(data.email);
 
   if (!user) {
-    throw new ApiError(401, "Invalid email or password");
+    throw new ApiError(401, "Invalid email or password", [], {
+      code: ErrorCode.INVALID_CREDENTIALS,
+    });
   }
 
   const isPasswordValid = await comparePassword(
@@ -40,7 +44,9 @@ export async function loginUserService(data: UserLoginInput) {
   );
 
   if (!isPasswordValid) {
-    throw new ApiError(401, "Invalid email or password");
+    throw new ApiError(401, "Invalid email or password", [], {
+      code: ErrorCode.INVALID_CREDENTIALS,
+    });
   }
 
   const accessToken = generateAccessToken(user.id);

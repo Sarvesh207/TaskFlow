@@ -6,11 +6,14 @@ import {
   logoutUser,
   getCurrentUser,
 } from "./auth.controller";
-import { requireAuth } from "../../middleware/auth.middleware";
+import { requireAuth, validate } from "../../middleware";
+import { userRegisterSchema, userLoginSchema } from "./auth.schema";
+
 const router = Router();
 
-router.post("/register", registerUser);
-router.post("/login", loginUser);
+router.post("/register", validate({ body: userRegisterSchema }), registerUser);
+router.post("/login", validate({ body: userLoginSchema }), loginUser);
 router.post("/logout", logoutUser);
 router.get("/me", requireAuth, getCurrentUser);
+
 export default router;
