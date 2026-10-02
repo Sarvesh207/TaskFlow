@@ -76,3 +76,35 @@ test('pages without a big table still scroll normally', async ({ page, team }) =
   await expect(page.getByRole('link', { name: 'Overview' })).toBeVisible()
   expect((await overflow(page)).sections).toBe(0)
 })
+
+test('dialogs open in the centre and stay there (no jump after the animation)', async ({ page, team }) => {
+  await signIn(page, team.owner)
+  await page.goto(`/projects/${team.project.id}/members`)
+  await expect(page.locator('table')).toBeVisible()
+
+  // Record the dialog's centre on every frame from the moment it mounts.
+  await page.evaluate(() => {
+    const w = window as unknown as { centres: { x: number; y: number }[] }
+    w.centres = []
+    const sample = () => {
+      const dialog = document.querySelector('[role="dialog"]')
+      if (dialog) {
+        const r = dialog.getBoundingClientRect()
+        w.centres.push({ x: r.left + r.width / 2, y: r.top + r.height / 2 })
+      }
+      if (w.centres.length < 30) requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+  })
+  await page.getByRole('button', { name: 'Add Member' }).click()
+  await expect(page.getByRole('dialog', { name: 'Add Project Member' })).toBeVisible()
+  await page.waitForFunction(() => (window as unknown as { centres: unknown[] }).centres.length >= 30)
+
+  const centres = await page.evaluate(() => (window as unknown as { centres: { x: number; y: number }[] }).centres)
+  const viewport = page.viewportSize()!
+  for (const { x, y } of centres) {
+    // A small lift/scale during the animation is fine; a jump across the screen is not.
+    expect(Math.abs(x - viewport.width / 2)).toBeLessThan(4)
+    expect(Math.abs(y - viewport.height / 2)).toBeLessThan(12)
+  }
+})
