@@ -6,6 +6,7 @@ import { RequireAuth } from '@/features/auth/RequireAuth'
 import { cn } from '@/lib/cn'
 import { preloadAllWhenIdle } from '@/router-preload'
 import { CommandPalette } from './CommandPalette'
+import { FILL_HEIGHT, useFillHeight } from './fill-height'
 import { Sidebar } from './Sidebar'
 import { Topbar } from './Topbar'
 
@@ -30,6 +31,7 @@ export function AppLayout() {
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const { pathname } = useLocation()
   const mainRef = useRef<HTMLElement>(null)
+  const fillHeight = useFillHeight()
   // Re-run the entrance animation per section, not per tab inside a project.
   const section = pathname.split('/')[1] ?? ''
 
@@ -102,9 +104,16 @@ export function AppLayout() {
             tabIndex={-1}
             className="scrollbar-thin min-h-0 flex-1 overflow-y-auto rounded-2xl border border-border bg-bg focus:outline-none"
           >
-            <div className="mx-auto w-full max-w-[1320px] px-4 py-6 lg:px-8 lg:py-7">
+            {/* Fill pages: a definite height (h-full, not min-h-full) so the flex-1 chain
+                below resolves against it and only the table scrolls. */}
+            <div
+              className={cn(
+                'mx-auto w-full max-w-[1320px] px-4 py-6 lg:px-8 lg:py-7',
+                fillHeight && 'lg:flex lg:h-full lg:flex-col',
+              )}
+            >
               <Suspense fallback={<PageLoader />}>
-                <div key={section} className="animate-rise">
+                <div key={section} className={cn('animate-rise', fillHeight && FILL_HEIGHT)}>
                   <Outlet />
                 </div>
               </Suspense>

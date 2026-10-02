@@ -8,6 +8,7 @@ import { Pagination } from '@/components/ui/Pagination'
 import { RowMenu } from '@/components/ui/RowMenu'
 import { EmptyState, ErrorState, TableSkeleton } from '@/components/ui/states'
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/Table'
+import { FILL_HEIGHT } from '@/components/layout/fill-height'
 import { useMe } from '@/features/auth/queries'
 import { usePagination } from '@/hooks/usePagination'
 import { formatDate } from '@/lib/format'
@@ -34,7 +35,7 @@ export function UsersPage() {
   return (
     <>
       <PageHeader title="Users" description="Everyone registered on the platform." />
-      <Card>
+      <Card className={FILL_HEIGHT}>
         <Toolbar>
           <SearchInput
             placeholder="Search users…"

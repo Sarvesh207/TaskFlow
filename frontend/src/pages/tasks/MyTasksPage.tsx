@@ -9,6 +9,7 @@ import { Pagination } from '@/components/ui/Pagination'
 import { EmptyState, ErrorState, TableSkeleton } from '@/components/ui/states'
 import { FilterTabs } from '@/components/ui/Tabs'
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/Table'
+import { FILL_HEIGHT } from '@/components/layout/fill-height'
 import { useMe } from '@/features/auth/queries'
 import { useProjects } from '@/features/projects/queries'
 import { usePagination } from '@/hooks/usePagination'
@@ -44,7 +45,7 @@ export function MyTasksPage() {
   return (
     <>
       <PageHeader title="My Tasks" description="Tasks assigned to you across all projects." />
-      <Card>
+      <Card className={FILL_HEIGHT}>
         <div className="px-4 pt-1">
           <FilterTabs value={status} onChange={setStatus} options={statusTabs(inProject)} />
         </div>

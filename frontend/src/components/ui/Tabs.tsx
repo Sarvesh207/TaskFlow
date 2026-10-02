@@ -8,6 +8,14 @@ const tabBase =
 const tabInactive = 'text-muted hover:text-fg'
 const tabActive = 'text-fg'
 
+/**
+ * The bar scrolls sideways on narrow screens, but never shows a scrollbar.
+ * The bottom rule is an inset shadow and the indicator sits inside the bar:
+ * anything poking out below would make the bar scroll vertically too.
+ */
+const tabBar =
+  'scrollbar-none flex gap-6 overflow-x-auto overflow-y-hidden shadow-[inset_0_-1px_0_var(--color-border)]'
+
 const SPRING = { type: 'spring', stiffness: 520, damping: 42, mass: 0.8 } as const
 
 /** The underline glides between tabs rather than jumping. */
@@ -16,7 +24,7 @@ function Indicator({ groupId }: { groupId: string }) {
     <motion.span
       layoutId={`tab-indicator-${groupId}`}
       transition={SPRING}
-      className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary"
+      className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-primary"
       aria-hidden
     />
   )
@@ -26,7 +34,7 @@ function Indicator({ groupId }: { groupId: string }) {
 export function LinkTabs({ tabs }: { tabs: { to: string; label: string; end?: boolean }[] }) {
   const groupId = useId()
   return (
-    <nav className="scrollbar-thin flex gap-6 overflow-x-auto border-b border-border" aria-label="Sections">
+    <nav className={tabBar} aria-label="Sections">
       {tabs.map((tab) => (
         <NavLink
           key={tab.to}
@@ -58,7 +66,7 @@ export function FilterTabs<T extends string>({
 }) {
   const groupId = useId()
   return (
-    <div className="scrollbar-thin flex gap-6 overflow-x-auto border-b border-border" role="tablist">
+    <div className={tabBar} role="tablist">
       {options.map((opt) => {
         const active = opt.value === value
         return (

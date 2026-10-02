@@ -221,6 +221,15 @@
   scrollbar-color: var(--color-border-strong) transparent;
 }
 
+/* Still scrollable (wheel, touch, keyboard), just no visible bar. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Surfaces get a 1px top highlight — reads as depth without heavy shadows. */
 @utility surface-highlight {
   box-shadow:

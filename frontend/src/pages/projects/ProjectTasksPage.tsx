@@ -13,6 +13,7 @@ import { RowMenu } from '@/components/ui/RowMenu'
 import { EmptyState, ErrorState, TableSkeleton } from '@/components/ui/states'
 import { FilterTabs } from '@/components/ui/Tabs'
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/Table'
+import { FILL_HEIGHT } from '@/components/layout/fill-height'
 import { useMe } from '@/features/auth/queries'
 import { useProjectContext } from '@/features/projects/project-context'
 import { usePagination } from '@/hooks/usePagination'
@@ -53,7 +54,7 @@ export function ProjectTasksPage() {
         ) : null}
       </div>
 
-      <Card>
+      <Card className={FILL_HEIGHT}>
         <div className="px-4 pt-1">
           <FilterTabs value={status} onChange={setStatus} options={statusTabs(tasks ?? [])} />
         </div>

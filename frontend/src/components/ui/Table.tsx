@@ -5,14 +5,22 @@ export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>)
   return (
     // `relative` keeps absolutely-positioned descendants (sr-only labels) inside the
     // scroll box — otherwise they stretch the whole page on narrow screens.
-    <div className="scrollbar-thin relative overflow-x-auto">
+    // In a fill-height page (see layout/fill-height.ts) the card is a flex column
+    // and this box takes the space left over, scrolling the rows under a sticky header.
+    <div className="scrollbar-thin relative min-h-0 flex-1 overflow-auto">
       <table className={cn('w-full min-w-[640px] border-collapse text-left text-[13px]', className)} {...props} />
     </div>
   )
 }
 
 export function THead(props: HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className="border-y border-border-soft bg-surface-2/70" {...props} />
+  // Opaque (surface-2 at 70% over surface) so rows don't show through the sticky header.
+  return (
+    <thead
+      className="sticky top-0 z-10 border-y border-border-soft bg-[color-mix(in_oklab,var(--color-surface-2)_70%,var(--color-surface))]"
+      {...props}
+    />
+  )
 }
 
 export function TBody(props: HTMLAttributes<HTMLTableSectionElement>) {
