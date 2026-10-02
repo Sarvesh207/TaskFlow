@@ -108,3 +108,19 @@ test('dialogs open in the centre and stay there (no jump after the animation)', 
     expect(Math.abs(y - viewport.height / 2)).toBeLessThan(12)
   }
 })
+
+test('form dropdowns open as a styled list (screenshots for review)', async ({ page, team }, testInfo) => {
+  await signIn(page, team.owner)
+  await page.goto(`/projects/${team.project.id}/tasks/new`)
+  const form = page.getByRole('dialog', { name: 'Create Task' })
+
+  for (const label of ['Assignee', 'Priority', 'Status']) {
+    await form.getByLabel(label).click()
+    const list = page.getByRole('listbox')
+    await expect(list).toBeVisible()
+    await page.waitForTimeout(300) // let the open animation finish
+    await page.screenshot({ path: testInfo.outputPath(`${label.toLowerCase()}-dropdown.png`) })
+    await page.keyboard.press('Escape')
+    await expect(list).toBeHidden()
+  }
+})

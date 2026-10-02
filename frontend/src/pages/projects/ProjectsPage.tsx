@@ -1,6 +1,6 @@
 import { ExternalLink, FolderKanban, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useDeferredValue, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { Suspense, useDeferredValue, useMemo, useState } from 'react'
+import { Link, Outlet, useNavigate, useSearchParams } from 'react-router'
 import { ProjectStatusBadge } from '@/components/badges'
 import { AvatarStack } from '@/components/ui/Avatar'
 import { ButtonLink } from '@/components/ui/Button'
@@ -190,6 +190,10 @@ export function ProjectsPage() {
         loading={deleteProject.isPending}
         onConfirm={() => toDelete && deleteProject.mutate(toDelete.id, { onSuccess: () => setToDelete(null) })}
       />
+      {/* Child routes are modals over this page (…/new, …/edit). */}
+      <Suspense fallback={null}>
+        <Outlet />
+      </Suspense>
     </>
   )
 }

@@ -34,17 +34,29 @@ export const routes: RouteObject[] = [
     element: <AppLayout />,
     children: [
       { index: true, element: page(loaders.dashboard, 'DashboardPage') },
-      { path: 'projects', element: page(loaders.projects, 'ProjectsPage'), handle: fillHeight },
-      { path: 'projects/new', element: page(loaders.createProject, 'CreateProjectPage') },
+      // Create/edit forms are modals: child routes rendered over the page beneath.
+      {
+        path: 'projects',
+        element: page(loaders.projects, 'ProjectsPage'),
+        handle: fillHeight,
+        children: [{ path: 'new', element: page(loaders.createProject, 'CreateProjectModal') }],
+      },
       {
         path: 'projects/:projectId',
         element: <ProjectLayout />,
         children: [
           { index: true, element: page(loaders.projectOverview, 'ProjectOverviewPage') },
-          { path: 'tasks', element: page(loaders.projectTasks, 'ProjectTasksPage'), handle: fillHeight },
-          { path: 'tasks/new', element: page(loaders.taskForm, 'TaskFormPage') },
-          { path: 'tasks/:taskId', element: page(loaders.taskDetail, 'TaskDetailPage') },
-          { path: 'tasks/:taskId/edit', element: page(loaders.taskForm, 'TaskFormPage') },
+          {
+            path: 'tasks',
+            element: page(loaders.projectTasks, 'ProjectTasksPage'),
+            handle: fillHeight,
+            children: [{ path: 'new', element: page(loaders.taskForm, 'TaskFormRoute') }],
+          },
+          {
+            path: 'tasks/:taskId',
+            element: page(loaders.taskDetail, 'TaskDetailPage'),
+            children: [{ path: 'edit', element: page(loaders.taskForm, 'TaskFormRoute') }],
+          },
           { path: 'members', element: page(loaders.projectMembers, 'ProjectMembersPage'), handle: fillHeight },
           { path: 'settings', element: page(loaders.projectSettings, 'ProjectSettingsPage') },
         ],

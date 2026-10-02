@@ -2,7 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import type { ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { Field, Input, Select, Textarea } from '@/components/ui/form'
+import { Field, Input, Textarea } from '@/components/ui/form'
+import { FormSelectMenu, ToneDot } from '@/components/ui/SelectMenu'
 import { PROJECT_STATUS, PROJECT_STATUSES } from '@/lib/domain'
 import { applyFieldErrors } from '@/lib/form'
 import type { ProjectInput } from '@/types/api'
@@ -15,6 +16,12 @@ const schema = z.object({
 })
 export type ProjectFormValues = z.infer<typeof schema>
 
+const STATUS_OPTIONS = PROJECT_STATUSES.map((s) => ({
+  value: s,
+  label: PROJECT_STATUS[s].label,
+  leading: <ToneDot tone={PROJECT_STATUS[s].tone} />,
+}))
+
 interface ProjectFormProps {
   defaultValues?: Partial<ProjectFormValues>
   disabled?: boolean
@@ -26,6 +33,7 @@ interface ProjectFormProps {
 export function ProjectForm({ defaultValues, disabled, onSubmit, actions }: ProjectFormProps) {
   const {
     register,
+    control,
     handleSubmit,
     setError,
     reset,
@@ -54,13 +62,7 @@ export function ProjectForm({ defaultValues, disabled, onSubmit, actions }: Proj
           <Textarea rows={4} placeholder="Describe your project…" {...register('description')} />
         </Field>
         <Field label="Status" error={errors.status?.message}>
-          <Select {...register('status')}>
-            {PROJECT_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {PROJECT_STATUS[s].label}
-              </option>
-            ))}
-          </Select>
+          <FormSelectMenu control={control} name="status" disabled={disabled} options={STATUS_OPTIONS} />
         </Field>
       </fieldset>
       {actions({ isSubmitting, isDirty })}
