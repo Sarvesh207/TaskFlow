@@ -1,0 +1,36 @@
+# Render Blueprint for the TaskFlow API (Render dashboard → New → Blueprint).
+# The same settings can be entered by hand under New → Web Service; see
+# "Deployment" in README.md. No Docker: Render's native runtimes include Bun,
+# and backend/.bun-version pins the version.
+services:
+  - type: web
+    name: taskflow-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: bun install --frozen-lockfile --production
+    startCommand: bun src/server.ts
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Browser → Vercel (/api rewrite) → Render: two proxies in front of the app.
+      - key: TRUST_PROXY_HOPS
+        value: "2"
+      - key: FRONTEND_URL
+        value: https://taskflow.sarveshgaynar.in
+      - key: CORS_ORIGIN
+        value: https://taskflow.sarveshgaynar.in
+      - key: GOOGLE_REDIRECT_URI
+        value: https://taskflow.sarveshgaynar.in/api/v1/auth/google/callback
+      # Secrets: values are entered in the Render dashboard, never committed.
+      - key: DATABASE_URL # Neon *pooled* connection string
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      # Render generates a random value; it never passes through git or chat.
+      - key: JWT_SECRET
+        generateValue: true
