@@ -11,6 +11,7 @@ bun install          # install deps
 bun run dev          # dev server with --watch
 bun run start        # run server
 bun run typecheck    # tsc --noEmit  (the only "build" step; noEmit is on)
+bun run db:migrate   # dbmate: apply db/migrations to DATABASE_URL (db:rollback undoes the last)
 ```
 
 Prisma:
@@ -29,6 +30,8 @@ bun test src/tests/integration/tasks.test.ts   # a single file
 ```
 
 The preload in `bunfig.toml` rewrites `DATABASE_URL` to the `-test` database and refuses any other; integration tests truncate every table before each test. Keep unit and integration as separate `bun test` runs — the service unit test uses `mock.module`, which is process-wide. There is no linter or formatter; verify with `bun run typecheck` and `bun run test`.
+
+dbmate also reads `.env` and fails on syntax Bun tolerates (e.g. `JWT_SECRET="x";`), printing the file in its error — keep `.env` plain `KEY=value` lines.
 
 Required `.env` (git-ignored, template in `.env.example`): `PORT`, `DATABASE_URL`, `JWT_SECRET`. Google sign-in also needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `FRONTEND_URL`. `JWT_SECRET` is read at module load in `src/utils/jwt.ts` and throws if missing, so the server won't boot without it.
 
@@ -51,7 +54,7 @@ Repositories and services export plain functions; the ambiguity between layers i
 
 ### Database schema ownership
 
-`prisma/schema.prisma` is **introspected**, not authored: there is no `prisma/migrations/` directory, the models use snake_case table/column names, and a `schema_migrations` model (dbmate) is present. Migrations are applied to Postgres outside this repo; after a schema change, `prisma db pull` then `prisma generate`.
+`prisma/schema.prisma` is **introspected**, not authored: there is no `prisma/migrations/` directory, the models use snake_case table/column names, and a `schema_migrations` model (dbmate) is present. Schema changes are SQL files in `db/migrations/` applied with `bun run db:migrate`; after one, update `schema.prisma` (`prisma db pull`, or by hand for a small change) then `prisma generate`. `db/seeds/dev_seed.sql` is demo data for local databases only — it is not a migration and must never run in production.
 
 The generated client is committed at `src/generated/prisma/` and imported by relative path (`../generated/prisma/client`, `../generated/prisma/enums`) — **not** from `@prisma/client`. Regenerate and commit it when the schema changes.
 
@@ -73,7 +76,9 @@ JWT in an **httpOnly cookie** named `accessToken` (not an `Authorization` header
 
 Google sign-in is OAuth 2.0 Authorization Code + PKCE, run entirely server-side: `GET /auth/google` stores `state` + the PKCE verifier in a signed, `SameSite=Lax` `oauth_google` cookie and redirects to Google; `GET /auth/google/callback` checks `state`, exchanges the code, then finds the user by `google_id`, links by email only when Google reports it verified, or creates one (`password_hash` null). Both routes answer with redirects, never JSON — failures go to `FRONTEND_URL/login?error=<code>`. With `?mode=popup` (what the frontend button uses) the flag rides in the state cookie and the callback instead redirects the popup to `FRONTEND_URL/auth/google/done?next=…` or `?error=<code>`; that SPA page reports to the opening tab over a `BroadcastChannel` and closes. All Google calls are in `src/modules/auth/google.ts` so tests can `mock.module` it.
 
-CORS is hardcoded to `http://localhost:5173` with `credentials: true`; the frontend (`../frontend`) calls the API through Vite's same-origin `/api` proxy.
+`/auth/login`, `/auth/register` and the two `/auth/google` routes are rate limited (`authRateLimiter`, 10/min per IP; effectively off under `NODE_ENV=test`). Behind proxies `req.ip` is only the real client when `TRUST_PROXY_HOPS` matches the proxy count (2 on Render behind Vercel). `GET /api/v1/health` is public and checks the database.
+
+CORS defaults to `http://localhost:5173` with `credentials: true`; `CORS_ORIGIN` (comma-separated) overrides it. In production the browser calls the frontend's own domain, which proxies `/api` here, so CORS is not exercised; the frontend (`../frontend`) calls the API through Vite's same-origin `/api` proxy.
 
 ### Authorization model
 

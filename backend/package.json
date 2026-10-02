@@ -12,7 +12,10 @@
     "test:integration": "bun test src/tests/integration",
     "test:db:setup": "bun src/tests/scripts/setup-test-db.ts",
     "test:db:reset": "bun src/tests/scripts/reset-test-db.ts",
-    "test:serve": "bun src/tests/scripts/serve-test.ts"
+    "test:serve": "bun src/tests/scripts/serve-test.ts",
+    "db:migrate": "dbmate --migrations-dir db/migrations --no-dump-schema up",
+    "db:rollback": "dbmate --migrations-dir db/migrations --no-dump-schema rollback",
+    "db:status": "dbmate --migrations-dir db/migrations --no-dump-schema status"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -35,6 +38,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
     "google-auth-library": "^11.1.0",
     "jsonwebtoken": "^9.0.3",
     "ls": "^1.0.0",

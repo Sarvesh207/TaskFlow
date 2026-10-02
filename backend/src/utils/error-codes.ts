@@ -11,6 +11,7 @@ export const ErrorCode = {
   INVALID_JSON: "INVALID_JSON",
   PAYLOAD_TOO_LARGE: "PAYLOAD_TOO_LARGE",
   BAD_REQUEST: "BAD_REQUEST",
+  TOO_MANY_REQUESTS: "TOO_MANY_REQUESTS",
 
   // 401 / 403 - who you are, or what you may do
   UNAUTHORIZED: "UNAUTHORIZED",
@@ -53,6 +54,8 @@ export function defaultCodeForStatus(statusCode: number): ErrorCodeType {
       return ErrorCode.CONFLICT;
     case 413:
       return ErrorCode.PAYLOAD_TOO_LARGE;
+    case 429:
+      return ErrorCode.TOO_MANY_REQUESTS;
     case 422:
       return ErrorCode.VALIDATION_ERROR;
     case 503:
