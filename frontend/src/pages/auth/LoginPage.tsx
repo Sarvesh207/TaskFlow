@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { z } from 'zod'
@@ -9,6 +9,8 @@ import { PasswordInput } from '@/components/ui/PasswordInput'
 import { ApiRequestError, errorMessage } from '@/lib/api'
 import { applyFieldErrors } from '@/lib/form'
 import { AuthLayout } from '@/features/auth/AuthLayout'
+import { AuthDivider, GoogleButton } from '@/features/auth/GoogleButton'
+import { googleErrorMessage } from '@/features/auth/google-error'
 import { safeNext } from '@/features/auth/redirect'
 import { useLogin } from '@/features/auth/queries'
 
@@ -20,10 +22,24 @@ type Values = z.infer<typeof schema>
 
 export function LoginPage() {
   const navigate = useNavigate()
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const login = useLogin()
   const [showPassword, setShowPassword] = useState(false)
-  const [formError, setFormError] = useState<string | null>(null)
+  // A failed Google sign-in lands back here with `?error=CODE`.
+  const [formError, setFormError] = useState<string | null>(() => googleErrorMessage(params.get('error')))
+
+  // Show the Google error once; a refresh shouldn't bring it back.
+  useEffect(() => {
+    if (!params.has('error')) return
+    setParams(
+      (prev) => {
+        const nextParams = new URLSearchParams(prev)
+        nextParams.delete('error')
+        return nextParams
+      },
+      { replace: true },
+    )
+  }, [params, setParams])
   const {
     register,
     handleSubmit,
@@ -65,6 +81,8 @@ export function LoginPage() {
           Sign in
         </Button>
       </form>
+      <AuthDivider />
+      <GoogleButton next={safeNext(params.get('next'))} onError={(code) => setFormError(googleErrorMessage(code))} />
       <p className="mt-8 text-center text-sm text-muted">
         Don&apos;t have an account?{' '}
         <Link to="/register" className="font-medium text-primary hover:text-primary-hover">

@@ -26,6 +26,11 @@ function Public({ children }: { children: ReactNode }) {
 export const routes: RouteObject[] = [
   { path: '/login', element: <Public>{page(loaders.login, 'LoginPage')}</Public> },
   { path: '/register', element: <Public>{page(loaders.register, 'RegisterPage')}</Public> },
+  // Not <Public>: the popup is already signed in when it lands here.
+  {
+    path: '/auth/google/done',
+    element: <Suspense fallback={<PageLoader />}>{page(loaders.googleDone, 'GoogleDonePage')}</Suspense>,
+  },
   {
     element: <AppLayout />,
     children: [
