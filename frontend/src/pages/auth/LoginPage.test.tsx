@@ -39,6 +39,29 @@ describe('LoginPage', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/'))
   })
 
+  it('links "Continue with Google" to the backend OAuth route, keeping ?next=', async () => {
+    renderApp('/login?next=/projects')
+    const link = await screen.findByRole('link', { name: 'Continue with Google' })
+    expect(link).toHaveAttribute('href', 'http://localhost/api/v1/auth/google?next=%2Fprojects')
+  })
+
+  it('does not pass an off-site ?next= on to Google sign-in', async () => {
+    renderApp('/login?next=//evil.example.com')
+    const link = await screen.findByRole('link', { name: 'Continue with Google' })
+    expect(link).toHaveAttribute('href', 'http://localhost/api/v1/auth/google?next=%2F')
+  })
+
+  it('explains a failed Google sign-in and drops ?error= from the URL', async () => {
+    const { router } = renderApp('/login?error=GOOGLE_EMAIL_UNVERIFIED&next=/projects')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Your Google email address is not verified')
+    await waitFor(() => expect(router.state.location.search).toBe('?next=%2Fprojects'))
+  })
+
+  it('shows a generic message for other Google errors', async () => {
+    renderApp('/login?error=GOOGLE_AUTH_FAILED')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Google sign-in failed. Please try again.')
+  })
+
   it('redirects signed-in users away from /login', async () => {
     const { router } = renderApp('/login', { as: '00000000-0000-4000-8000-00000000000a' })
     await waitFor(() => expect(router.state.location.pathname).toBe('/'))

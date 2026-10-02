@@ -69,7 +69,9 @@ one per attempt.
 | `UNAUTHORIZED` | 401 | No token supplied |
 | `TOKEN_EXPIRED` | 401 | Token was valid but has expired — send the user to log in again |
 | `INVALID_TOKEN` | 401 | Token is malformed, tampered with, or its subject is not a valid id |
-| `INVALID_CREDENTIALS` | 401 | Wrong email or password on login |
+| `INVALID_CREDENTIALS` | 401 | Wrong email or password on login (also: password login on a Google-only account) |
+| `GOOGLE_AUTH_FAILED` | 401 | Google sign-in failed: cancelled, bad/expired `state`, failed code exchange, or email linked to another Google account |
+| `GOOGLE_EMAIL_UNVERIFIED` | 403 | Google did not verify the account's email, so it cannot be linked or used |
 | `FORBIDDEN` | 403 | Authenticated, but lacks the role for this action |
 | `NOT_FOUND` | 404 | Resource does not exist (or is not visible to this user) |
 | `ROUTE_NOT_FOUND` | 404 | No such endpoint — check the method and path |
@@ -142,6 +144,12 @@ A `PATCH`/`PUT` with `{}` returns `422`, with
 ```json
 { "statusCode": 401, "code": "INVALID_CREDENTIALS", "message": "Invalid email or password" }
 ```
+
+The Google routes (`GET /auth/google`, `GET /auth/google/callback`) are the one
+exception to the envelope: the browser navigates to them, so a failure is a
+`302` to `FRONTEND_URL/login?error=<code>` (for example
+`?error=GOOGLE_EMAIL_UNVERIFIED`) rather than a JSON body. The `code` is the
+same stable value.
 
 ### Duplicate email on register
 

@@ -9,6 +9,7 @@ type Loader = () => Promise<unknown>
 export const loaders = {
   login: () => import('@/pages/auth/LoginPage'),
   register: () => import('@/pages/auth/RegisterPage'),
+  googleDone: () => import('@/pages/auth/GoogleDonePage'),
   dashboard: () => import('@/pages/DashboardPage'),
   projects: () => import('@/pages/projects/ProjectsPage'),
   createProject: () => import('@/pages/projects/CreateProjectModal'),

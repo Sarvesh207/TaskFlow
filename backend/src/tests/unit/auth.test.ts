@@ -3,7 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { requireAuth } from "../../middleware/auth.middleware";
 import { requireUserId } from "../../middleware/validate.middleware";
-import { generateAccessToken } from "../../utils/jwt";
+import { generateAccessToken, signOAuthState, verifyOAuthState } from "../../utils/jwt";
 import { comparePassword, hashPassword } from "../../utils/password";
 
 const USER_ID = "7c9e6679-7425-40de-944b-e07fc1f90ae7";
@@ -63,6 +63,24 @@ describe("requireUserId", () => {
     expect(() => requireUserId({ userId: "not-a-uuid" } as Request)).toThrow(
       expect.objectContaining({ code: "INVALID_TOKEN" }),
     );
+  });
+});
+
+describe("OAuth state cookie", () => {
+  const data = { state: "s".repeat(43), codeVerifier: "v".repeat(43), next: "/projects", popup: true };
+
+  test("round-trips state, verifier and next", () => {
+    expect(verifyOAuthState(signOAuthState(data))).toEqual(data);
+  });
+
+  test("missing, tampered or expired -> null", () => {
+    expect(verifyOAuthState(undefined)).toBeNull();
+    expect(verifyOAuthState(jwt.sign(data, "not-the-secret", { audience: "oauth-state" }))).toBeNull();
+    expect(verifyOAuthState(jwt.sign(data, secret, { audience: "oauth-state", expiresIn: -10 }))).toBeNull();
+  });
+
+  test("an access token is not accepted as a state cookie", () => {
+    expect(verifyOAuthState(generateAccessToken(USER_ID))).toBeNull();
   });
 });
 

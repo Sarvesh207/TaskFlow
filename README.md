@@ -17,7 +17,8 @@ The repository is a monorepo with two apps:
 
 ## Features
 
-- **Authentication** — register, login, logout; JWT stored in an httpOnly cookie
+- **Authentication** — register, login, logout, and "Continue with Google" (OAuth 2.0
+  Authorization Code + PKCE); JWT stored in an httpOnly cookie
 - **Projects** — create, edit, archive/complete and delete projects
 - **Team members** — add users to a project, change roles, remove members, leave a project
 - **Tasks** — create, assign, prioritise (1–5), set due dates and move through
@@ -146,6 +147,14 @@ then pulled from the database (`prisma db pull`) and the client regenerated.
 Login: email + password → bcrypt compare → sign JWT { sub: userId } (1 day)
        → Set-Cookie: accessToken (httpOnly)
 
+Google: GET /auth/google → state + PKCE verifier in a signed SameSite=Lax cookie
+        → 302 to Google consent → Google 302s to /auth/google/callback?code&state
+        → check state, exchange code + verifier (+ client secret) for an ID token
+        → verify ID token → find user by google_id, else link by verified email,
+          else create → Set-Cookie: accessToken → 302 to ?next=
+        (the button opens this in a popup with ?mode=popup; the popup lands on
+         /auth/google/done, reports to the opening tab and closes)
+
 Protected request: Cookie accessToken → requireAuth verifies JWT → req.userId
 ```
 
@@ -191,6 +200,8 @@ All routes are prefixed with `/api/v1`.
 | POST   | `/auth/login`                              | Log in (sets cookie)     |
 | POST   | `/auth/logout`                             | Log out                  |
 | GET    | `/auth/me`                                 | Current user             |
+| GET    | `/auth/google?next=`                       | Start Google sign-in     |
+| GET    | `/auth/google/callback`                    | Google OAuth callback    |
 | GET    | `/users`                                   | List users               |
 | GET    | `/users/:id`                               | User with profile        |
 | PATCH  | `/users/:id`                               | Update user / profile    |
@@ -320,7 +331,16 @@ Create `backend/.env`:
 PORT=3000
 DATABASE_URL=postgres://postgres:YOUR_PASSWORD@localhost:5432/project-management-sass?sslmode=disable
 JWT_SECRET=your_secret
+# Optional: Google sign-in — see backend/.env.example
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GOOGLE_REDIRECT_URI=http://localhost:5173/api/v1/auth/google/callback
+FRONTEND_URL=http://localhost:5173
 ```
+
+For Google sign-in, create a **Web application** OAuth client in Google Cloud
+Console (APIs & Services → Credentials) and add `GOOGLE_REDIRECT_URI` as an
+authorized redirect URI.
 
 ```bash
 bun run dev          # http://localhost:3000

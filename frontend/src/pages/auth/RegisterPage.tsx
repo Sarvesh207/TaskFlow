@@ -10,6 +10,8 @@ import { errorMessage } from '@/lib/api'
 import { cn } from '@/lib/cn'
 import { applyFieldErrors } from '@/lib/form'
 import { AuthLayout } from '@/features/auth/AuthLayout'
+import { AuthDivider, GoogleButton } from '@/features/auth/GoogleButton'
+import { googleErrorMessage } from '@/features/auth/google-error'
 import { PasswordInput } from '@/components/ui/PasswordInput'
 import { useLogin, useRegister } from '@/features/auth/queries'
 
@@ -105,6 +107,8 @@ export function RegisterPage() {
           Create account
         </Button>
       </form>
+      <AuthDivider />
+      <GoogleButton onError={(code) => setFormError(googleErrorMessage(code))} />
       <p className="mt-8 text-center text-sm text-muted">
         Already have an account?{' '}
         <Link to="/login" className="font-medium text-primary hover:text-primary-hover">

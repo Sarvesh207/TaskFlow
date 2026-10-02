@@ -29,15 +29,20 @@ export function removeUserData(qc: QueryClient) {
   qc.removeQueries({ predicate: (q) => q.queryKey[0] !== meKey[0] })
 }
 
+/** After a new session cookie is set (password or Google): load the new user. */
+export async function startSession(qc: QueryClient) {
+  removeUserData(qc)
+  // staleTime 0: after a sign-out the cache holds a fresh `null` that must not be reused.
+  return qc.fetchQuery({ queryKey: meKey, queryFn: fetchMe, staleTime: 0 })
+}
+
 export function useLogin() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (input: LoginInput) => api.post('/auth/login', input),
     meta: { silentError: true },
     onSuccess: async () => {
-      removeUserData(qc)
-      // staleTime 0: after a sign-out the cache holds a fresh `null` that must not be reused.
-      await qc.fetchQuery({ queryKey: meKey, queryFn: fetchMe, staleTime: 0 })
+      await startSession(qc)
     },
   })
 }

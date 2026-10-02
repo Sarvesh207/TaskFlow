@@ -26,6 +26,9 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // Same origin as VITE_API_URL below, like the app behind the Vite proxy.
+    // jsdom's XMLHttpRequest (axios) enforces CORS, so a cross-origin page fails.
+    environmentOptions: { jsdom: { url: 'http://localhost/' } },
     setupFiles: ['src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     // Node's fetch cannot resolve relative URLs; MSW intercepts this origin.

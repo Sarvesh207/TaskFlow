@@ -30,7 +30,7 @@ bun test src/tests/integration/tasks.test.ts   # a single file
 
 The preload in `bunfig.toml` rewrites `DATABASE_URL` to the `-test` database and refuses any other; integration tests truncate every table before each test. Keep unit and integration as separate `bun test` runs — the service unit test uses `mock.module`, which is process-wide. There is no linter or formatter; verify with `bun run typecheck` and `bun run test`.
 
-Required `.env` (git-ignored): `PORT`, `DATABASE_URL`, `JWT_SECRET`. `JWT_SECRET` is read at module load in `src/utils/jwt.ts` and throws if missing, so the server won't boot without it.
+Required `.env` (git-ignored, template in `.env.example`): `PORT`, `DATABASE_URL`, `JWT_SECRET`. Google sign-in also needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `FRONTEND_URL`. `JWT_SECRET` is read at module load in `src/utils/jwt.ts` and throws if missing, so the server won't boot without it.
 
 ## Architecture
 
@@ -71,6 +71,8 @@ Validation lives in `middleware/validate.middleware.ts`: it parses params, query
 
 JWT in an **httpOnly cookie** named `accessToken` (not an `Authorization` header). `requireAuth` reads `req.cookies.accessToken`, verifies it, and sets `req.userId` (typed via the global augmentation in `src/types/express.d.ts`). Tokens are `{ sub: userId, type: "access" }`, 1 day; passwords are bcrypt with 12 salt rounds (4 under `NODE_ENV=test`).
 
+Google sign-in is OAuth 2.0 Authorization Code + PKCE, run entirely server-side: `GET /auth/google` stores `state` + the PKCE verifier in a signed, `SameSite=Lax` `oauth_google` cookie and redirects to Google; `GET /auth/google/callback` checks `state`, exchanges the code, then finds the user by `google_id`, links by email only when Google reports it verified, or creates one (`password_hash` null). Both routes answer with redirects, never JSON — failures go to `FRONTEND_URL/login?error=<code>`. With `?mode=popup` (what the frontend button uses) the flag rides in the state cookie and the callback instead redirects the popup to `FRONTEND_URL/auth/google/done?next=…` or `?error=<code>`; that SPA page reports to the opening tab over a `BroadcastChannel` and closes. All Google calls are in `src/modules/auth/google.ts` so tests can `mock.module` it.
+
 CORS is hardcoded to `http://localhost:5173` with `credentials: true`; the frontend (`../frontend`) calls the API through Vite's same-origin `/api` proxy.
 
 ### Authorization model
@@ -86,13 +88,13 @@ Rules encoded today: only the owner may update/delete a project; owner+admin may
 Mounted in `src/app.ts` under `/api/v1`: `users`, `auth`, `projects`. Sub-resources are nested inside the projects router rather than in their own modules — `src/modules/project-members/` and `src/modules/tasks/` are empty placeholders, and member and task handlers all live in `projects.{routes,controller,service,repository}.ts`.
 
 ```
-POST   /api/v1/auth/register|login|logout      GET /api/v1/auth/me
+POST   /api/v1/auth/register|login|logout      GET /api/v1/auth/me|google|google/callback
 GET    /api/v1/users            GET|PATCH|DELETE /api/v1/users/:id
 GET|POST /api/v1/projects       GET|PATCH|DELETE /api/v1/projects/:id
 GET|POST /api/v1/projects/:projectId/members    GET|PUT|DELETE .../members/:userId
 GET|POST /api/v1/projects/:projectId/tasks      GET|PUT|DELETE .../tasks/:tasksId
 ```
 
-Note the task route param is spelled `:tasksId` — param schema keys must match it. Every route above is behind `requireAuth` except `auth/register`, `auth/login` and `auth/logout`. The users repository selects explicit columns, so `password_hash` is never returned (an integration test enforces this). There is no `/health` endpoint. Unmatched paths return a JSON `404 ROUTE_NOT_FOUND` from `notFoundMiddleware`, and every request is tagged with an `X-Request-Id`.
+Note the task route param is spelled `:tasksId` — param schema keys must match it. Every route above is behind `requireAuth` except `auth/register`, `auth/login`, `auth/logout` and the two `auth/google` routes. The users repository selects explicit columns, so `password_hash` is never returned (an integration test enforces this). There is no `/health` endpoint. Unmatched paths return a JSON `404 ROUTE_NOT_FOUND` from `notFoundMiddleware`, and every request is tagged with an `X-Request-Id`.
 
 Nested routes for resources that belong to a project; flat routes for addressing a resource directly.

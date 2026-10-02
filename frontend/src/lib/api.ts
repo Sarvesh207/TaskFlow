@@ -1,4 +1,15 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1'
+import axios, { type AxiosResponse } from 'axios'
+
+export const BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1'
+
+const http = axios.create({
+  baseURL: BASE_URL,
+  // Send the httpOnly `accessToken` cookie.
+  withCredentials: true,
+  // Never throw on status: every response is mapped from the backend envelope
+  // in `request()` below, so only network failures reach the catch.
+  validateStatus: () => true,
+})
 
 /**
  * Error thrown for every non-2xx response. Mirrors the backend envelope
@@ -42,14 +53,9 @@ export interface ApiResult<T> {
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<ApiResult<T>> {
-  let res: Response
+  let res: AxiosResponse<unknown>
   try {
-    res = await fetch(`${BASE_URL}${path}`, {
-      method,
-      credentials: 'include',
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    })
+    res = await http.request({ method, url: path, data: body })
   } catch {
     throw new ApiRequestError(
       0,
@@ -58,14 +64,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     )
   }
 
-  let payload: Envelope<T> | null = null
-  try {
-    payload = (await res.json()) as Envelope<T>
-  } catch {
-    // Non-JSON body (e.g. the dev proxy's error page when the API is down).
-  }
+  // Axios leaves a non-JSON body (e.g. the dev proxy's error page when the API
+  // is down) as a string; only an object can be the envelope.
+  const payload = typeof res.data === 'object' && res.data !== null ? (res.data as Envelope<T>) : null
+  const ok = res.status >= 200 && res.status < 300
 
-  if (!res.ok || !payload || payload.success === false) {
+  if (!ok || !payload || payload.success === false) {
     throw new ApiRequestError(
       res.status,
       payload?.code ?? (res.status >= 500 ? 'INTERNAL_ERROR' : 'BAD_REQUEST'),
@@ -74,7 +78,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
           ? 'The server is unavailable. Is the API running?'
           : `Request failed with status ${res.status}`),
       payload?.fieldErrors ?? {},
-      payload?.requestId ?? res.headers.get('X-Request-Id') ?? undefined,
+      payload?.requestId ?? (res.headers['x-request-id'] as string | undefined),
     )
   }
 

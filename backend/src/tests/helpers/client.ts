@@ -55,6 +55,29 @@ export class TestClient {
       body: init.rawBody ?? (body === undefined ? undefined : JSON.stringify(body)),
     });
 
+    this.storeCookies(res);
+
+    return { status: res.status, headers: res.headers, body: (await res.json()) as ApiResponseBody<T> };
+  }
+
+  /**
+   * A browser-style GET that does not follow redirects, for endpoints that
+   * answer with a 302 instead of JSON (the Google OAuth routes).
+   */
+  async navigate(path: string): Promise<{ status: number; headers: Headers; location: string | null }> {
+    const headers: Record<string, string> = {};
+    if (this.cookies.size > 0) {
+      headers.Cookie = [...this.cookies].map(([k, v]) => `${k}=${v}`).join("; ");
+    }
+
+    const res = await fetch(`${this.baseUrl}${path}`, { headers, redirect: "manual" });
+    this.storeCookies(res);
+    await res.body?.cancel();
+
+    return { status: res.status, headers: res.headers, location: res.headers.get("location") };
+  }
+
+  private storeCookies(res: Response): void {
     for (const setCookie of res.headers.getSetCookie()) {
       const [pair, ...attrs] = setCookie.split(";");
       const [name, ...rest] = pair!.split("=");
@@ -63,8 +86,6 @@ export class TestClient {
       if (expired) this.cookies.delete(name!.trim());
       else this.cookies.set(name!.trim(), value);
     }
-
-    return { status: res.status, headers: res.headers, body: (await res.json()) as ApiResponseBody<T> };
   }
 
   get = <T = any>(path: string) => this.request<T>("GET", path);

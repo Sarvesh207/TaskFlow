@@ -152,7 +152,14 @@ Create a `.env` file:
 PORT=3000
 DATABASE_URL=postgres://postgres:YOUR_PASSWORD@localhost:5432/project-management-sass?sslmode=disable
 JWT_SECRET=your_secret
+GOOGLE_CLIENT_ID=your_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:5173/api/v1/auth/google/callback
+FRONTEND_URL=http://localhost:5173
 ```
+
+See `.env.example`. The `GOOGLE_*` variables are only needed for Google
+sign-in; without them `/auth/google` redirects back to `/login?error=SERVICE_UNAVAILABLE`.
 
 `JWT_SECRET` is read when `src/utils/jwt.ts` is first imported and throws if it
 is missing, so the server will not boot without it.
@@ -262,6 +269,8 @@ POST /api/v1/auth/register
 POST /api/v1/auth/login
 POST /api/v1/auth/logout
 GET  /api/v1/auth/me
+GET  /api/v1/auth/google?next=/path   # browser navigation → 302 to Google
+GET  /api/v1/auth/google/callback     # Google → 302 to FRONTEND_URL + next
 ```
 
 ### Users
@@ -336,6 +345,37 @@ Sign JWT { sub: userId, type: "access" }, 1 day
        ↓
 Set httpOnly cookie "accessToken"
 ```
+
+Google (OAuth 2.0 Authorization Code + PKCE, `google-auth-library`):
+
+```text
+GET /auth/google?next=/projects
+       ↓
+Random state + PKCE verifier → signed JWT in cookie "oauth_google"
+(httpOnly, SameSite=Lax, 10 min, path /api/v1/auth/google)
+       ↓
+302 → accounts.google.com (scope openid email profile, S256 challenge)
+       ↓
+GET /auth/google/callback?code&state   (cookie cleared; single use)
+       ↓
+state must match cookie → exchange code + verifier + client secret
+       ↓
+Verify ID token (audience = GOOGLE_CLIENT_ID)
+       ↓
+User by google_id → else link by email (only if email_verified) → else create
+       ↓
+Set httpOnly cookie "accessToken" → 302 to FRONTEND_URL + next
+```
+
+Failures redirect to `FRONTEND_URL/login?error=<code>` instead of returning
+JSON, because the browser navigated there.
+
+The frontend opens the flow in a popup with `GET /auth/google?mode=popup`. The
+flag is kept in the state cookie, and the callback then redirects the popup to
+`FRONTEND_URL/auth/google/done?next=…` (or `?error=<code>`). That page reports
+the result to the original tab over a `BroadcastChannel` and closes itself. If
+the browser blocks the popup, the button falls back to the full-page flow. Google-only users have a null
+`password_hash`; password login answers them with `INVALID_CREDENTIALS`.
 
 Protected request:
 
@@ -416,7 +456,7 @@ Do not add advanced features until the core modules are stable.
 Completed:
 
 - Users CRUD with profile
-- Authentication (register, login, logout, current user, JWT cookie)
+- Authentication (register, login, logout, current user, JWT cookie, Google OAuth 2.0)
 - Projects CRUD
 - Project members CRUD
 - Project tasks CRUD
