@@ -67,11 +67,4 @@ describe('Settings popover', () => {
     expect(within(theme).getByRole('radio', { name: 'System' })).toHaveAttribute('aria-checked', 'true')
     expect(within(theme).getByRole('radio', { name: 'System' })).toHaveFocus()
   })
-
-  it('the top bar toggle flips light/dark in one click', async () => {
-    const { user } = renderApp('/', { as: IDS.alex })
-    await user.click(await screen.findByRole('button', { name: 'Switch to light theme' }))
-    expect(html()).not.toHaveClass('dark')
-    expect(screen.getByRole('button', { name: 'Switch to dark theme' })).toBeInTheDocument()
-  })
 })

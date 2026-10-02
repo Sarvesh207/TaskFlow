@@ -8,7 +8,7 @@ import { preloadAllWhenIdle } from '@/router-preload'
 import { CommandPalette } from './CommandPalette'
 import { FILL_HEIGHT, useFillHeight } from './fill-height'
 import { Sidebar } from './Sidebar'
-import { Topbar } from './Topbar'
+import { MobileHeader } from './MobileHeader'
 
 const COLLAPSED_KEY = 'taskflow.sidebar-collapsed'
 
@@ -78,7 +78,7 @@ export function AppLayout() {
         </a>
 
         <aside className={cn('hidden shrink-0 lg:block', collapsed ? 'w-[68px]' : 'w-[252px]')}>
-          <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapsed} />
+          <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapsed} onOpenPalette={() => setPaletteOpen(true)} />
         </aside>
 
         <Dialog.Root open={navOpen} onOpenChange={setNavOpen}>
@@ -89,7 +89,7 @@ export function AppLayout() {
               aria-describedby={undefined}
             >
               <Dialog.Title className="sr-only">Navigation</Dialog.Title>
-              <Sidebar onNavigate={() => setNavOpen(false)} />
+              <Sidebar onNavigate={() => setNavOpen(false)} onOpenPalette={() => setPaletteOpen(true)} />
             </Dialog.Content>
           </Dialog.Portal>
         </Dialog.Root>
@@ -97,18 +97,22 @@ export function AppLayout() {
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
 
         <div className="flex min-w-0 flex-1 flex-col gap-3">
-          <Topbar onOpenNav={() => setNavOpen(true)} onOpenPalette={() => setPaletteOpen(true)} />
+          {/* No top bar on large screens: search is in the sidebar, theme and account in its Settings. */}
+          <MobileHeader onOpenNav={() => setNavOpen(true)} onOpenPalette={() => setPaletteOpen(true)} />
           <main
             ref={mainRef}
             id="main"
             tabIndex={-1}
             className="scrollbar-thin min-h-0 flex-1 overflow-y-auto rounded-2xl border border-border bg-bg focus:outline-none"
           >
-            {/* Fill pages: a definite height (h-full, not min-h-full) so the flex-1 chain
+            {/* Fluid width: content always sits one fixed padding from the panel edges, so
+                collapsing the sidebar gives the page that space instead of empty side margins.
+                (Narrow pages like the task detail cap themselves, left-aligned.)
+                Fill pages: a definite height (h-full, not min-h-full) so the flex-1 chain
                 below resolves against it and only the table scrolls. */}
             <div
               className={cn(
-                'mx-auto w-full max-w-[1320px] px-4 py-6 lg:px-8 lg:py-7',
+                'w-full px-4 py-6 lg:px-8 lg:py-7',
                 fillHeight && 'lg:flex lg:h-full lg:flex-col',
               )}
             >

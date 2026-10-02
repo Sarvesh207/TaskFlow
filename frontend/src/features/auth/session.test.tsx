@@ -6,11 +6,9 @@ import { server } from '@/test/msw/server'
 import { renderApp } from '@/test/render'
 
 async function signOut(user: ReturnType<typeof renderApp>['user']) {
-  // Radix menus open from the keyboard as well as the pointer.
-  const trigger = await screen.findByRole('button', { name: 'Account menu' })
-  trigger.focus()
-  await user.keyboard('{Enter}')
-  await user.click(await screen.findByRole('menuitem', { name: 'Sign out' }))
+  // Sign out lives in the sidebar's Settings popover (there is no top-bar account menu).
+  await user.click(await screen.findByRole('button', { name: 'Settings' }))
+  await user.click(await screen.findByRole('button', { name: 'Sign out' }))
 }
 
 describe('session', () => {
