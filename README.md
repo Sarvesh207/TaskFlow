@@ -410,7 +410,7 @@ involved, and the Google redirect URI is on that same domain.
 
 Config lives in the repo: [`render.yaml`](render.yaml) (Render Blueprint),
 [`frontend/vercel.json`](frontend/vercel.json) (rewrites, SPA fallback, headers),
-`backend/.bun-version` (pins Bun) and `backend/db/migrations/` (the schema).
+`.bun-version` (pins Bun for CI; Render also gets `BUN_VERSION` from `render.yaml`) and `backend/db/migrations/` (the schema).
 
 ### One-time setup
 

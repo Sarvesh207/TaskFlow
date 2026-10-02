@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version-file: backend/.bun-version
+          bun-version-file: .bun-version
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run test:db:setup
@@ -60,7 +60,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version-file: backend/.bun-version
+          bun-version-file: .bun-version
       - uses: actions/setup-node@v4
         with:
           node-version: 22
