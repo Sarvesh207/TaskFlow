@@ -10,6 +10,8 @@ services:
     rootDir: backend
     buildCommand: bun install --frozen-lockfile --production
     startCommand: bun src/server.ts
+    # Liveness only: Render calls this every 5 s, and it must not query the database
+    # (that would keep Neon's free compute awake all month). /api/v1/health/db is for manual checks.
     healthCheckPath: /api/v1/health
     autoDeploy: true
     envVars:

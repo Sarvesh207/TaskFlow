@@ -273,7 +273,8 @@ All routes are mounted under `/api/v1`.
 POST /api/v1/auth/register
 POST /api/v1/auth/login
 POST /api/v1/auth/logout
-GET  /api/v1/health                   # public; 200 when the database answers, else 503
+GET  /api/v1/health                   # public liveness, never touches the database (Render calls it every 5 s)
+GET  /api/v1/health/db                # public readiness; 200 when the database answers, else 503 (manual use)
 GET  /api/v1/auth/me
 GET  /api/v1/auth/google?next=/path   # browser navigation → 302 to Google
 GET  /api/v1/auth/google/callback     # Google → 302 to FRONTEND_URL + next

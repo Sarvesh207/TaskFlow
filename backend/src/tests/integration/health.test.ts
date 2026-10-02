@@ -3,9 +3,19 @@ import { useTestServer } from "./setup";
 
 const ctx = useTestServer();
 
-describe("GET /health", () => {
-  test("is public and reports the database as up", async () => {
+describe("GET /health (liveness)", () => {
+  test("is public and answers ok", async () => {
     const res = await ctx.anon().get("/health");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ success: true, data: { status: "ok" } });
+    expect(res.body.data).not.toHaveProperty("database");
+  });
+});
+
+describe("GET /health/db (readiness)", () => {
+  test("is public and reports the database as up", async () => {
+    const res = await ctx.anon().get("/health/db");
 
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({

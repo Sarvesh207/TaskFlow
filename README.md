@@ -430,7 +430,7 @@ Config lives in the repo: [`render.yaml`](render.yaml) (Render Blueprint),
 3. **Render** — New → **Blueprint** → pick this repo (reads `render.yaml`), or
    New → Web Service with: runtime **Node**, root directory `backend`, build
    `bun install --frozen-lockfile --production`, start `bun src/server.ts`,
-   health check `/api/v1/health`. Then set the environment variables below.
+   health check `/api/v1/health` (liveness only, see "Free-tier notes"). Then set the environment variables below.
    If Render gives the service a URL other than `taskflow-api.onrender.com`,
    update the `/api` rewrite in `frontend/vercel.json`.
 4. **Vercel** — import the repo, **Root Directory `frontend`**, framework Vite.
@@ -462,7 +462,7 @@ Check it after deploying (see below).
 
 ### After deploying: smoke test
 
-- `https://<site>/api/v1/health` returns 200 with `"database": "up"`.
+- `https://<site>/api/v1/health` returns 200 (the process is up) and `https://<site>/api/v1/health/db` returns 200 with `"database": "up"` (the database answers).
 - Register and sign in; the `accessToken` cookie is `HttpOnly; Secure; SameSite=Strict`.
 - Create, edit and delete a project and a task. Reload a deep link such as `/projects`.
 - **Continue with Google** opens the popup, signs in, and a second sign-in reuses the account.
@@ -472,11 +472,18 @@ Check it after deploying (see below).
 
 ### Free-tier notes
 
-Render's free web service sleeps after about 15 minutes without traffic, so the
-first request afterwards takes 30–60 s. An uptime monitor pinging
-`/api/v1/health` every 10 minutes keeps it awake. The rate limiter keeps its
-counters in memory, which is fine for one instance; use a shared store if the
-API is ever scaled to several.
+- **Render** sleeps its free web service after about 15 minutes without traffic,
+  so the first request afterwards takes 30–60 s. An uptime monitor pinging
+  `/api/v1/health` every 10 minutes keeps it awake.
+- **Neon** suspends the free database after 5 idle minutes (not configurable) and
+  wakes it on the next query, which adds about a second. The free plan includes
+  100 compute-hours a month, about 400 hours of the smallest size, so the
+  database must be allowed to sleep. That is why `/api/v1/health` never touches
+  the database: Render calls it every 5 seconds, and a query per call would keep
+  Neon awake all month and use the quota up in about 17 days. **Point health
+  checks and uptime monitors at `/api/v1/health`, never at `/api/v1/health/db`.**
+- The rate limiter keeps its counters in memory, which is fine for one instance;
+  use a shared store if the API is ever scaled to several.
 
 ### Rollback
 
@@ -508,7 +515,6 @@ API is ever scaled to several.
 - Notifications and email
 - File attachments
 - Real-time updates (WebSockets)
-- `/health` endpoint and deployment config
 
 ---
 

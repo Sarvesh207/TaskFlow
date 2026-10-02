@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { getHealth } from "./health.controller";
+import { getLiveness, getReadiness } from "./health.controller";
 
 const router = Router();
 
-// Public on purpose: the host's health check and uptime monitors call it.
-router.get("/", getHealth);
+// Both are public on purpose: the host's health check and uptime monitors call them.
+router.get("/", getLiveness); // no database access, safe to call every few seconds
+router.get("/db", getReadiness); // queries the database; use sparingly
 
 export default router;

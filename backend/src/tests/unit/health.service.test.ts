@@ -1,14 +1,17 @@
 import { describe, expect, mock, spyOn, test } from "bun:test";
 
 let database: "up" | "down" = "up";
+let pings = 0;
 
 mock.module("../../modules/health/health.repository", () => ({
   pingDatabase: mock(async () => {
+    pings++;
     if (database === "down") throw new Error("connection refused");
   }),
 }));
 
 const { checkHealth } = await import("../../modules/health/health.service");
+const { getLiveness } = await import("../../modules/health/health.controller");
 
 describe("checkHealth", () => {
   test("reports ok when the database answers", async () => {
@@ -24,5 +27,18 @@ describe("checkHealth", () => {
 
     expect(error).toMatchObject({ statusCode: 503, code: "SERVICE_UNAVAILABLE" });
     expect(error.message).not.toContain("connection refused");
+  });
+});
+
+describe("liveness", () => {
+  test("never touches the database, even when it is down", () => {
+    database = "down";
+    pings = 0;
+    const res = { status: mock(() => res), json: mock(() => res) };
+
+    getLiveness({} as never, res as never);
+
+    expect(pings).toBe(0);
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 });
