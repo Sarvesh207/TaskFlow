@@ -55,6 +55,7 @@ one per attempt.
 | `413` | Body larger than the 1 MB limit |
 | `415` | Unsupported content encoding |
 | `422` | Body parsed as JSON but failed schema validation — **the common one** |
+| `429` | Rate limited (`/auth/login`, `/auth/register`, `/auth/google*`: 10 requests per minute per IP) |
 | `500` | Bug on the server |
 | `503` | Database unreachable |
 
@@ -66,6 +67,7 @@ one per attempt.
 | `INVALID_JSON` | 400 | Body is not valid JSON (trailing comma, single quotes, unquoted key) |
 | `PAYLOAD_TOO_LARGE` | 413 | Body over 1 MB |
 | `BAD_REQUEST` | 400 | Other malformed request |
+| `TOO_MANY_REQUESTS` | 429 | Too many sign-in / sign-up / Google attempts from one IP; wait for `Retry-After` seconds |
 | `UNAUTHORIZED` | 401 | No token supplied |
 | `TOKEN_EXPIRED` | 401 | Token was valid but has expired — send the user to log in again |
 | `INVALID_TOKEN` | 401 | Token is malformed, tampered with, or its subject is not a valid id |
