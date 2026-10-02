@@ -118,13 +118,14 @@
   @keyframes overlay-out {
     to { opacity: 0; }
   }
+  /* Centring comes from the dialog's -translate-x/y-1/2 classes (the CSS
+     `translate` property). Animate only `transform` on top of it: repeating the
+     -50% here would add to it and the dialog would jump into place afterwards. */
   @keyframes dialog-in {
-    from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
-    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    from { opacity: 0; transform: translateY(2%) scale(0.96); }
   }
   @keyframes dialog-out {
-    from { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    to { opacity: 0; transform: translate(-50%, -49%) scale(0.98); }
+    to { opacity: 0; transform: translateY(1%) scale(0.98); }
   }
   @keyframes pop-in {
     from { opacity: 0; transform: translateY(-4px) scale(0.97); }
@@ -219,6 +220,15 @@
 @utility scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-strong) transparent;
+}
+
+/* Still scrollable (wheel, touch, keyboard), just no visible bar. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Surfaces get a 1px top highlight — reads as depth without heavy shadows. */

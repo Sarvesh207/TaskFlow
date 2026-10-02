@@ -10,6 +10,7 @@ import { SearchInput, Toolbar } from '@/components/ui/misc'
 import { RowMenu } from '@/components/ui/RowMenu'
 import { EmptyState } from '@/components/ui/states'
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/ui/Table'
+import { FILL_HEIGHT } from '@/components/layout/fill-height'
 import { useMe } from '@/features/auth/queries'
 import { useProjectContext, type ProjectPerson } from '@/features/projects/project-context'
 import { formatDate } from '@/lib/format'
@@ -45,7 +46,7 @@ export function ProjectMembersPage() {
 
   return (
     <>
-      <Card>
+      <Card className={FILL_HEIGHT}>
         <Toolbar>
           <SearchInput
             placeholder="Search members…"

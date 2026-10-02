@@ -2,6 +2,7 @@ import { ChevronRight, Pencil, Settings, Trash2, UserPlus } from 'lucide-react'
 import { Suspense, useMemo, useState } from 'react'
 import { Link, Outlet, useNavigate, useParams } from 'react-router'
 import { ProjectStatusBadge } from '@/components/badges'
+import { FILL_HEIGHT, useFillHeight } from '@/components/layout/fill-height'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { ProjectTile } from '@/components/ui/misc'
 import { RowMenu } from '@/components/ui/RowMenu'
@@ -10,6 +11,7 @@ import { LinkTabs } from '@/components/ui/Tabs'
 import { useMe } from '@/features/auth/queries'
 import { useMembers } from '@/features/members/queries'
 import { useUserDirectory } from '@/features/users/queries'
+import { cn } from '@/lib/cn'
 import { projectTile } from '@/lib/domain'
 import { can, getProjectRole } from '@/lib/permissions'
 import type { ProjectContext, ProjectPerson } from '@/features/projects/project-context'
@@ -19,6 +21,8 @@ export function ProjectLayout() {
   const { projectId } = useParams()
   const me = useMe()
   const navigate = useNavigate()
+  // Tasks and Members: pass the fill down so their table scrolls, not the page.
+  const fillHeight = useFillHeight()
   const projectQuery = useProject(projectId)
   const membersQuery = useMembers(projectId)
   const directory = useUserDirectory()
@@ -70,7 +74,7 @@ export function ProjectLayout() {
   const base = `/projects/${project.id}`
 
   return (
-    <div>
+    <div className={cn(fillHeight && FILL_HEIGHT)}>
       <nav className="mb-4 flex items-center gap-1.5 text-sm text-muted" aria-label="Breadcrumb">
         <Link to="/projects" className="hover:text-fg">
           Projects
@@ -112,9 +116,11 @@ export function ProjectLayout() {
         />
       </div>
 
-      <Suspense fallback={<PageLoader />}>
-        <Outlet context={context} />
-      </Suspense>
+      <div className={cn(fillHeight && FILL_HEIGHT)}>
+        <Suspense fallback={<PageLoader />}>
+          <Outlet context={context} />
+        </Suspense>
+      </div>
 
       <ConfirmDialog
         open={confirmDelete}
