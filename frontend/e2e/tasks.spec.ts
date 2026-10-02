@@ -1,16 +1,22 @@
-import { expect, signIn, test } from './fixtures'
+import { chooseOption, expect, signIn, test } from './fixtures'
 
 test('create a task with an assignee and priority', async ({ page, team }) => {
   await signIn(page, team.owner)
   await page.goto(`/projects/${team.project.id}/tasks`)
   await page.getByRole('link', { name: 'New Task' }).click()
 
-  await page.getByLabel('Title').fill('Write API docs')
-  await page.getByLabel('Description').fill('Every endpoint, with examples.')
-  await page.getByLabel('Assignee').selectOption({ label: team.admin.name })
-  await page.getByLabel('Priority').selectOption({ label: 'High' })
-  await page.getByRole('button', { name: 'Create Task' }).click()
+  // Scoped: the list's own "Priority" filter is still on the page behind the modal.
+  const form = page.getByRole('dialog', { name: 'Create Task' })
+  await form.getByLabel('Title').fill('Write API docs')
+  await form.getByLabel('Description').fill('Every endpoint, with examples.')
+  await chooseOption(form, 'Assignee', team.admin.name)
+  await chooseOption(form, 'Priority', 'High')
+  await form.getByRole('button', { name: 'Create Task' }).click()
 
+  // The form was a modal over the list: back on the list, with the new task in it.
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page).toHaveURL(new RegExp(`/projects/${team.project.id}/tasks$`))
+  await page.getByRole('link', { name: 'Write API docs' }).click()
   await expect(page.getByRole('heading', { name: 'Write API docs' })).toBeVisible()
   await expect(page.getByRole('link', { name: team.admin.name })).toBeVisible()
   await expect(page.getByText('High').first()).toBeVisible()
@@ -69,12 +75,21 @@ test('a member creates a task for themselves; priority is left to admins', async
   await signIn(page, team.member)
   await page.goto(`/projects/${team.project.id}/tasks/new`)
 
-  await expect(page.getByLabel('Priority')).toBeDisabled()
-  await expect(page.getByLabel('Assignee').locator('option')).toHaveText(['Unassigned', `${team.member.name} (you)`])
+  const form = page.getByRole('dialog', { name: 'Create Task' })
+  await expect(form.getByLabel('Priority')).toBeDisabled()
+  // Preselected, and the only person a member may pick.
+  await expect(form.getByLabel('Assignee')).toContainText(`${team.member.name} (you)`)
+  await form.getByLabel('Assignee').click()
+  await expect(page.getByRole('option')).toHaveCount(2)
+  await expect(page.getByRole('option', { name: 'Unassigned', exact: true })).toBeVisible()
+  await expect(page.getByRole('option', { name: `${team.member.name} (you)`, exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
 
-  await page.getByLabel('Title').fill('Update README')
-  await page.getByRole('button', { name: 'Create Task' }).click()
+  await form.getByLabel('Title').fill('Update README')
+  await form.getByRole('button', { name: 'Create Task' }).click()
 
+  await expect(page).toHaveURL(new RegExp(`/projects/${team.project.id}/tasks$`))
+  await page.getByRole('link', { name: 'Update README' }).click()
   await expect(page.getByRole('heading', { name: 'Update README' })).toBeVisible()
   // Exact: the sidebar's profile link also contains the member's name.
   await expect(page.getByRole('link', { name: team.member.name, exact: true })).toBeVisible()

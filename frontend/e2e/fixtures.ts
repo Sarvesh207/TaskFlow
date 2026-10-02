@@ -1,4 +1,4 @@
-import { test as base, expect, type APIRequestContext, type Page } from '@playwright/test'
+import { test as base, expect, type APIRequestContext, type Locator, type Page } from '@playwright/test'
 
 export const PASSWORD = 'Passw0rd!'
 
@@ -84,5 +84,12 @@ export const test = base.extend<{ team: Team; unique: string }>({
     await Promise.all(contexts.map((c) => c.dispose()))
   },
 })
+
+/** Pick an option in a styled <SelectMenu>: open it by its label, then click the option. */
+export async function chooseOption(scope: Locator, label: string, option: string) {
+  await scope.getByLabel(label).click()
+  // The list is portalled to <body>, outside `scope`.
+  await scope.page().getByRole('option', { name: option, exact: true }).click()
+}
 
 export { expect }

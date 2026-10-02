@@ -1,6 +1,6 @@
 import { Eye, ListTodo, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useDeferredValue, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Suspense, useDeferredValue, useMemo, useState } from 'react'
+import { Link, Outlet, useNavigate } from 'react-router'
 import { DueLabel, PriorityBadge, TaskStatusBadge } from '@/components/badges'
 import { Avatar } from '@/components/ui/Avatar'
 import { ButtonLink } from '@/components/ui/Button'
@@ -22,9 +22,11 @@ import { can } from '@/lib/permissions'
 import type { Task } from '@/types/api'
 import { byUrgency, filterTasks, statusTabs, type PriorityFilter, type StatusFilter } from '@/features/tasks/filters'
 import { useDeleteTask, useTasks } from '@/features/tasks/queries'
+import { TaskFormModal } from '@/features/tasks/TaskFormModal'
 
 export function ProjectTasksPage() {
-  const { project, role, peopleById } = useProjectContext()
+  const context = useProjectContext()
+  const { project, role, peopleById } = context
   const me = useMe()
   const navigate = useNavigate()
   const { data: tasks, isPending, error, refetch } = useTasks(project.id)
@@ -34,6 +36,8 @@ export function ProjectTasksPage() {
   const [search, setSearch] = useState('')
   const q = useDeferredValue(search)
   const [toDelete, setToDelete] = useState<Task | null>(null)
+  // Edit from the row menu opens over the list; `task` is kept while the modal animates out.
+  const [editing, setEditing] = useState<{ task: Task; open: boolean } | null>(null)
 
   const sorted = useMemo(() => (tasks ?? []).toSorted(byUrgency), [tasks])
   const filtered = useMemo(() => filterTasks(sorted, { status, priority, q }), [sorted, status, priority, q])
@@ -153,7 +157,7 @@ export function ProjectTasksPage() {
                             {
                               label: 'Edit',
                               icon: <Pencil />,
-                              onSelect: () => navigate(`${base}/${task.id}/edit`),
+                              onSelect: () => setEditing({ task, open: true }),
                               hidden: !can.editTask(role, task, me.id),
                             },
                             {
@@ -185,6 +189,20 @@ export function ProjectTasksPage() {
         loading={deleteTask.isPending}
         onConfirm={() => toDelete && deleteTask.mutate(toDelete.id, { onSuccess: () => setToDelete(null) })}
       />
+
+      {editing ? (
+        <TaskFormModal
+          open={editing.open}
+          onOpenChange={(open) => !open && setEditing({ ...editing, open: false })}
+          task={editing.task}
+          onSaved={() => setEditing({ ...editing, open: false })}
+        />
+      ) : null}
+
+      {/* Child routes are modals over this page (…/new, …/edit). */}
+      <Suspense fallback={null}>
+        <Outlet context={context} />
+      </Suspense>
     </>
   )
 }

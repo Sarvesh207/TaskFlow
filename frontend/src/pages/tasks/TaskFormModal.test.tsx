@@ -1,24 +1,72 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { IDS, sent } from '@/test/msw/db'
 import { renderApp } from '@/test/render'
+import { chooseOption, optionNames } from '@/test/select-menu'
 
 const base = `/projects/${IDS.project}/tasks`
 
-describe('TaskFormPage', () => {
+describe('task form modal', () => {
   it('creates a task, sending only filled-in fields and the numeric priority', async () => {
     const { user, router } = renderApp(`${base}/new`, { as: IDS.alex })
 
     await user.type(await screen.findByLabelText('Title'), 'Write API docs')
-    await user.selectOptions(screen.getByLabelText('Assignee'), 'Sam Rivera')
-    await user.selectOptions(screen.getByLabelText('Priority'), 'High')
+    await chooseOption(user, 'Assignee', /Sam Rivera/)
+    await chooseOption(user, 'Priority', 'High')
     await user.click(screen.getByRole('button', { name: 'Create Task' }))
 
-    await waitFor(() => expect(router.state.location.pathname).not.toBe(`${base}/new`))
+    // Back on the task list (it was underneath the whole time), with the new task in it.
+    await waitFor(() => expect(router.state.location.pathname).toBe(base))
     expect(sent('POST', '/tasks')).toEqual([
       { title: 'Write API docs', status: 'pending', priority: 5, assigned_to: IDS.sam },
     ])
-    expect(await screen.findByRole('heading', { name: 'Write API docs' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Write API docs' })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('opens over the task list, and Cancel closes it without saving', async () => {
+    const { user, router } = renderApp(`${base}/new`, { as: IDS.alex })
+
+    expect(await screen.findByRole('dialog', { name: 'Create Task' })).toBeInTheDocument()
+    // The list is rendered underneath (hidden from assistive tech while the modal is open).
+    expect(screen.getByRole('heading', { name: 'Tasks', hidden: true })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    // The route is left once the exit animation has had time to play.
+    await waitFor(() => expect(router.state.location.pathname).toBe(base))
+    expect(sent('POST', '/tasks')).toEqual([])
+  })
+
+  it('"New Task" on the list opens the modal; closing goes back to the list', async () => {
+    const { user, router } = renderApp(base, { as: IDS.alex })
+    await user.click(await screen.findByRole('link', { name: 'New Task' }))
+
+    expect(await screen.findByRole('dialog', { name: 'Create Task' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe(`${base}/new`)
+
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(router.state.location.pathname).toBe(base))
+  })
+
+  it('Edit in a row menu opens the form over the list, without leaving it', async () => {
+    const { user, router } = renderApp(base, { as: IDS.alex })
+    const menus = await screen.findAllByRole('button', { name: 'Actions' })
+    await user.click(menus[0]!)
+    await user.click(await screen.findByRole('menuitem', { name: 'Edit' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Edit Task' })
+    expect(router.state.location.pathname).toBe(base)
+
+    const title = within(dialog).getByLabelText('Title')
+    await user.clear(title)
+    await user.type(title, 'Renamed from the list')
+    await user.click(within(dialog).getByRole('button', { name: 'Save Changes' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(router.state.location.pathname).toBe(base)
+    // Every PUT the app sent (whichever row was first).
+    expect(sent('PUT', '')).toEqual([{ title: 'Renamed from the list' }])
   })
 
   it('validates the title', async () => {
@@ -47,7 +95,7 @@ describe('TaskFormPage', () => {
     expect(screen.getByLabelText('Priority')).toBeDisabled()
     expect(screen.getByText('Only owners and admins can change the assignee or priority.')).toBeInTheDocument()
 
-    await user.selectOptions(screen.getByLabelText('Status'), 'Completed')
+    await chooseOption(user, 'Status', 'Completed')
     await user.click(screen.getByRole('button', { name: 'Save Changes' }))
 
     await waitFor(() => expect(sent('PUT', `/tasks/${IDS.taskJo}`)).toEqual([{ status: 'completed' }]))
@@ -62,9 +110,9 @@ describe('TaskFormPage', () => {
     const { user, router } = renderApp(`${base}/new`, { as: IDS.jo })
 
     const assignee = await screen.findByLabelText('Assignee')
-    const options = Array.from((assignee as HTMLSelectElement).options).map((o) => o.textContent)
-    expect(options).toEqual(['Unassigned', 'Jo Park (you)'])
-    expect(assignee).toHaveValue(IDS.jo)
+    // Preselected: a member can only assign a new task to themselves.
+    expect(assignee).toHaveTextContent('Jo Park (you)')
+    expect(await optionNames(user, 'Assignee')).toEqual(['Unassigned', 'Jo Park (you)'])
     expect(screen.getByLabelText('Priority')).toBeDisabled()
 
     await user.type(screen.getByLabelText('Title'), 'Update README')

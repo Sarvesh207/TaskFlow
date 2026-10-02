@@ -38,7 +38,8 @@ export function Skeleton({ className }: { className?: string }) {
 
 export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="divide-y divide-border/70" aria-busy="true" aria-label="Loading">
+    // In a fill-height card (layout/fill-height.ts) it may be cut short, never push the page.
+    <div className="divide-y divide-border/70 lg:min-h-0 lg:overflow-hidden" aria-busy="true" aria-label="Loading">
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="flex h-[52px] items-center gap-4 px-4" style={{ opacity: 1 - i * 0.15 }}>
           <Skeleton className="size-7 rounded-full" />
@@ -65,15 +66,29 @@ export function EmptyState({
   className?: string
 }) {
   return (
-    <div className={cn('flex animate-rise flex-col items-center justify-center px-6 py-14 text-center', className)}>
-      {icon ? (
-        <div className="surface-highlight mb-4 flex size-11 items-center justify-center rounded-xl border border-border-strong bg-gradient-to-b from-surface-3 to-surface-2 text-muted [&_svg]:size-5">
-          {icon}
-        </div>
-      ) : null}
-      <h3 className="text-[14px] font-semibold text-fg">{title}</h3>
-      {description ? <p className="mt-1 max-w-sm text-[13px] leading-relaxed text-muted">{description}</p> : null}
-      {action ? <div className="mt-5">{action}</div> : null}
+    // In a fill-height card (layout/fill-height.ts) the outer box takes the space left. The space
+    // above and below is two spacers rather than padding, so in a short card they shrink (to 16px)
+    // and the content stays centred; only when even that does not fit does the box scroll
+    // (`center-safe` keeps the top reachable). Elsewhere it looks as it always did (56px each side).
+    <div
+      className={cn(
+        'flex animate-rise flex-col items-center justify-center-safe px-6 text-center',
+        'lg:min-h-0 lg:flex-1 lg:overflow-y-auto',
+        className,
+      )}
+    >
+      <div className="h-14 min-h-4 shrink" aria-hidden />
+      <div className="flex shrink-0 flex-col items-center">
+        {icon ? (
+          <div className="surface-highlight mb-4 flex size-11 items-center justify-center rounded-xl border border-border-strong bg-gradient-to-b from-surface-3 to-surface-2 text-muted [&_svg]:size-5">
+            {icon}
+          </div>
+        ) : null}
+        <h3 className="text-[14px] font-semibold text-fg">{title}</h3>
+        {description ? <p className="mt-1 max-w-sm text-[13px] leading-relaxed text-muted">{description}</p> : null}
+        {action ? <div className="mt-5">{action}</div> : null}
+      </div>
+      <div className="h-14 min-h-4 shrink" aria-hidden />
     </div>
   )
 }

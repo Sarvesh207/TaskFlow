@@ -1,6 +1,6 @@
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Suspense, useState, type ReactNode } from 'react'
+import { Link, Outlet, useNavigate, useParams } from 'react-router'
 import { DueLabel, PriorityBadge, TaskStatusBadge } from '@/components/badges'
 import { Avatar } from '@/components/ui/Avatar'
 import { Button, ButtonLink } from '@/components/ui/Button'
@@ -17,7 +17,8 @@ import { useDeleteTask, useTask, useUpdateTask } from '@/features/tasks/queries'
 
 export function TaskDetailPage() {
   const { taskId } = useParams()
-  const { project, role, peopleById } = useProjectContext()
+  const context = useProjectContext()
+  const { project, role, peopleById } = context
   const me = useMe()
   const navigate = useNavigate()
   const { data: task, error, refetch } = useTask(project.id, taskId)
@@ -121,6 +122,11 @@ export function TaskDetailPage() {
         loading={deleteTask.isPending}
         onConfirm={() => deleteTask.mutate(task.id, { onSuccess: () => navigate(tasksPath, { replace: true }) })}
       />
+
+      {/* Child routes are modals over this page (…/new, …/edit). */}
+      <Suspense fallback={null}>
+        <Outlet context={context} />
+      </Suspense>
     </div>
   )
 }
