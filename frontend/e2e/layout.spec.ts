@@ -244,3 +244,20 @@ test('wide screen: content keeps the same side padding with the sidebar open or 
     }
   }
 })
+
+test('task list priority filter is a styled dropdown and filters the table', async ({ page, team }, testInfo) => {
+  await signIn(page, team.owner)
+  await page.goto(`/projects/${team.project.id}/tasks`)
+  await expect(page.getByRole('link', { name: 'Fix login bug' })).toBeVisible() // High
+  await expect(page.getByRole('link', { name: 'Design homepage' })).toBeVisible() // Low
+
+  await page.getByLabel('Filter by priority').click()
+  await expect(page.getByRole('option')).toHaveText(['All Priority', 'Low', 'Medium', 'High'])
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: testInfo.outputPath('priority-filter.png') })
+
+  await page.getByRole('option', { name: 'High', exact: true }).click()
+  await expect(page.getByRole('link', { name: 'Fix login bug' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Design homepage' })).toHaveCount(0)
+  await expect(page.getByLabel('Filter by priority')).toContainText('High')
+})

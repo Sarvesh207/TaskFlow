@@ -3,7 +3,7 @@ import { useDeferredValue, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { DueLabel, PriorityBadge, TaskStatusBadge } from '@/components/badges'
 import { Card } from '@/components/ui/Card'
-import { Select } from '@/components/ui/form'
+import { SelectMenu, type SelectMenuOption } from '@/components/ui/SelectMenu'
 import { PageHeader, ProjectTile, SearchInput, Toolbar } from '@/components/ui/misc'
 import { Pagination } from '@/components/ui/Pagination'
 import { EmptyState, ErrorState, TableSkeleton } from '@/components/ui/states'
@@ -13,8 +13,9 @@ import { FILL_HEIGHT } from '@/components/layout/fill-height'
 import { useMe } from '@/features/auth/queries'
 import { useProjects } from '@/features/projects/queries'
 import { usePagination } from '@/hooks/usePagination'
-import { PRIORITY, PRIORITY_LEVELS, projectTile } from '@/lib/domain'
+import { projectTile } from '@/lib/domain'
 import { byUrgency, filterTasks, statusTabs, type PriorityFilter, type StatusFilter } from '@/features/tasks/filters'
+import { PRIORITY_FILTER_OPTIONS } from '@/features/tasks/priority-options'
 import { useTasksAcross } from '@/features/tasks/queries'
 
 export function MyTasksPage() {
@@ -25,6 +26,14 @@ export function MyTasksPage() {
   const [status, setStatus] = useState<StatusFilter>('all')
   const [priority, setPriority] = useState<PriorityFilter>('all')
   const [projectId, setProjectId] = useState('all')
+  const projectOptions: SelectMenuOption[] = [
+    { value: 'all', label: 'All Projects' },
+    ...(projects.data ?? []).map((p) => ({
+      value: p.id,
+      label: p.name,
+      leading: <ProjectTile name={p.name} tileClass={projectTile(p.id)} size="xs" />,
+    })),
+  ]
   const [search, setSearch] = useState('')
   const q = useDeferredValue(search)
 
@@ -58,32 +67,20 @@ export function MyTasksPage() {
             className="sm:max-w-xs sm:flex-1"
           />
           <div className="flex gap-3 sm:ml-auto">
-            <Select
+            <SelectMenu
               aria-label="Filter by project"
               value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
+              onValueChange={setProjectId}
+              options={projectOptions}
               className="flex-1 sm:w-44"
-            >
-              <option value="all">All Projects</option>
-              {projects.data?.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </Select>
-            <Select
+            />
+            <SelectMenu
               aria-label="Filter by priority"
               value={priority}
-              onChange={(e) => setPriority(e.target.value as PriorityFilter)}
+              onValueChange={(v) => setPriority(v as PriorityFilter)}
+              options={PRIORITY_FILTER_OPTIONS}
               className="flex-1 sm:w-40"
-            >
-              <option value="all">All Priority</option>
-              {PRIORITY_LEVELS.map((p) => (
-                <option key={p} value={p}>
-                  {PRIORITY[p].label}
-                </option>
-              ))}
-            </Select>
+            />
           </div>
         </Toolbar>
 
