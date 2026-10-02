@@ -124,3 +124,33 @@ test('form dropdowns open as a styled list (screenshots for review)', async ({ p
     await expect(list).toBeHidden()
   }
 })
+
+for (const height of [720, 600]) {
+  test(`empty task list stays inside its card (${height}px tall)`, async ({ page, team, unique }, testInfo) => {
+    await page.setViewportSize({ width: 1280, height })
+    await signIn(page, team.owner)
+    const res = await page.request.post('/api/v1/projects', { data: { name: `Empty ${unique}` } })
+    const project = (await res.json()).data
+
+    await page.goto(`/projects/${project.id}/tasks`)
+    await expect(page.getByRole('heading', { name: 'No tasks yet' })).toBeVisible()
+
+    expect((await overflow(page)).main).toBe(0)
+    // Nothing hangs off the card's bottom edge: the empty state ends inside the card, and if the
+    // space is short it scrolls there (its own "New Task" button is reachable by scrolling).
+    const card = page.locator('[role="tablist"]').locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]')
+    const empty = page.getByRole('heading', { name: 'No tasks yet' }).locator('xpath=../..')
+    const [cardBox, emptyBox] = [await card.boundingBox(), await empty.boundingBox()]
+    expect(emptyBox!.y + emptyBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height + 0.5)
+    const button = page.getByRole('link', { name: 'New Task' }).last()
+    if (height === 720) {
+      // Enough room: no scrolling, and the button has space below it (not stuck to the card edge).
+      const buttonBox = (await button.boundingBox())!
+      expect(cardBox!.y + cardBox!.height - (buttonBox.y + buttonBox.height)).toBeGreaterThanOrEqual(16)
+      expect(await empty.evaluate((el) => el.scrollHeight - el.clientHeight)).toBe(0)
+    }
+    await button.scrollIntoViewIfNeeded()
+    await expect(button).toBeInViewport()
+    await page.screenshot({ path: testInfo.outputPath('empty.png') })
+  })
+}
