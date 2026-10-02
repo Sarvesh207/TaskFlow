@@ -14,7 +14,7 @@ function ThemedToaster() {
   return (
     <Toaster
       theme={resolved}
-      position="bottom-right"
+      position="top-center"
       closeButton
       gap={8}
       toastOptions={{
