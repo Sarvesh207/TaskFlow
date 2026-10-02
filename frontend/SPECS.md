@@ -60,7 +60,7 @@ written once. Hard-coded colours are only used as explicit light/dark pairs
 | Token | Light | Dark | Use |
 |---|---|---|---|
 | `canvas` | `#f4f4f6` | `#070709` | App background behind the panels |
-| `bg` | `#fcfcfd` | `#0f0f10` | Sidebar, top bar, content panel |
+| `bg` | `#fcfcfd` | `#0f0f10` | Sidebar, phone header, content panel |
 | `surface` | `#ffffff` | `#131316` | Cards, menus, dialogs |
 | `surface-2` / `-3` | `#f7f7f8` / `#eff2f6` | `#1a1a1e` / `#232329` | Raised controls, table header |
 | `border` / `-soft` / `-strong` | `#e3e8ef` / `#e7ebf1` / `#d3dae5` | `#24272e` / `#1e2128` / `#343842` | Hairlines |
@@ -73,13 +73,16 @@ written once. Hard-coded colours are only used as explicit light/dark pairs
 **Theme switching** — `src/features/theme/theme.ts` (Light / Dark / System,
 default Dark, key `taskflow.theme` in localStorage, System follows the OS live).
 `index.html` applies the saved theme inline before first paint. UI: the
-**Settings** popover at the bottom of the sidebar (segmented radio group) and a
-one-click sun/moon toggle in the top bar.
+**Settings** popover at the bottom of the sidebar (segmented radio group) — the
+only theme control.
 
-**Layout** — sidebar, top bar and page are separate rounded (`rounded-2xl`),
-bordered panels on the canvas with 12px gaps; the page scrolls inside its panel.
-The sidebar has collapsible sections (Workspace / Manage / Projects shortcuts),
-a collapse-to-rail button (persisted), Settings and the user card.
+**Layout** — sidebar and page are separate rounded (`rounded-2xl`), bordered
+panels on the canvas with 12px gaps; there is no top bar on large screens, so the
+page panel runs full height and scrolls inside itself (list pages scroll only
+their table). The sidebar has a search button (opens the command palette, also
+Ctrl/⌘+K; an icon on the collapsed rail), collapsible sections (Workspace /
+Manage / Projects shortcuts), a collapse-to-rail button (persisted), Settings
+(theme, profile, sign out) and the user card.
 
 Semantic badge palettes (takeuforward-style rounded-rectangle chips):
 
@@ -149,7 +152,7 @@ frontend/
 │   │   ├── tasks/            # queries, filters
 │   │   └── users/            # queries, user directory
 │   ├── components/
-│   │   ├── layout/           # AppLayout, Sidebar, Topbar
+│   │   ├── layout/           # AppLayout, Sidebar, MobileHeader
 │   │   ├── brand/            # Logo
 │   │   └── ui/               # design-system primitives
 │   └── hooks/                # useDebouncedValue, usePagination
@@ -350,7 +353,8 @@ status badge, "…" menu, tab bar) that loads the project + members once.
 ## 7. Responsive behaviour
 
 - `≥ lg`: fixed sidebar.
-- `< lg`: sidebar becomes an off-canvas drawer opened from the top bar.
+- `< lg`: sidebar becomes an off-canvas drawer, opened from a slim 48px header
+  (☰, logo, search) shown only on small screens.
 - Tables scroll horizontally inside their card on narrow screens.
 
 ## 8. Accessibility
@@ -423,7 +427,7 @@ fake data) and listed here as backend follow-ups.
    QueryClient with global 401 handling, router skeleton.
 3. **UI kit** — primitives in `components/ui`.
 4. **Auth** — login, register, `RequireAuth`, logout.
-5. **Shell** — sidebar, top bar (search → projects, user menu), mobile drawer.
+5. **Shell** — sidebar (search, nav, Settings), phone header, mobile drawer.
 6. **Projects** — list, create, `ProjectLayout`, overview, settings.
 7. **Members** — tab, add / role / details / remove modals.
 8. **Tasks** — tab, form, details with inline status.

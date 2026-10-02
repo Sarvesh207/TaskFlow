@@ -7,7 +7,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Field, Input, Textarea } from '@/components/ui/form'
 import { InfoNote } from '@/components/ui/misc'
 import { Modal, ModalActions } from '@/components/ui/Modal'
-import { FormSelectMenu, PriorityBars, ToneDot, type SelectMenuOption } from '@/components/ui/SelectMenu'
+import { FormSelectMenu, ToneDot, type SelectMenuOption } from '@/components/ui/SelectMenu'
 import { useMe } from '@/features/auth/queries'
 import { useProjectContext } from '@/features/projects/project-context'
 import {
@@ -23,6 +23,7 @@ import { toDateInput } from '@/lib/format'
 import { applyFieldErrors } from '@/lib/form'
 import { can } from '@/lib/permissions'
 import type { Task, TaskInput } from '@/types/api'
+import { PRIORITY_OPTIONS } from './priority-options'
 import { useCreateTask, useUpdateTask } from './queries'
 
 // Mirrors createTasksSchema / updateTaskSchema in backend/src/modules/projects/project.schema.ts.
@@ -36,12 +37,6 @@ const schema = z.object({
 })
 type Values = z.infer<typeof schema>
 const FIELDS = ['title', 'description', 'assigned_to', 'priority', 'due_date', 'status'] as const
-
-const PRIORITY_OPTIONS: SelectMenuOption[] = PRIORITY_LEVELS.map((p, i) => ({
-  value: p,
-  label: PRIORITY[p].label,
-  leading: <PriorityBars level={(i + 1) as 1 | 2 | 3} tone={PRIORITY[p].tone} />,
-}))
 
 const STATUS_OPTIONS: SelectMenuOption[] = WRITABLE_TASK_STATUSES.map((s) => ({
   value: s,

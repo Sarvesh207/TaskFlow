@@ -30,8 +30,9 @@ test('F1/F2: sign out, then sign in as someone else in the same tab', async ({ p
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
 
   await page.goto('/profile')
-  await page.getByRole('button', { name: 'Account menu' }).click()
-  await page.getByRole('menuitem', { name: 'Sign out' }).click()
+  // Sign out lives in the sidebar's Settings popover.
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.getByRole('button', { name: 'Sign out' }).click()
   await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
 
   await page.getByLabel('Email').fill(team.member.email)

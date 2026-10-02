@@ -1,10 +1,10 @@
-import { CheckSquare, ChevronDown, FolderKanban, LayoutDashboard, PanelLeft, Users } from 'lucide-react'
+import { CheckSquare, ChevronDown, FolderKanban, LayoutDashboard, PanelLeft, Search, Users } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useId, useState, type ComponentType, type ReactNode } from 'react'
 import { Link, NavLink } from 'react-router'
 import { Logo, LogoMark } from '@/components/brand/Logo'
 import { Avatar } from '@/components/ui/Avatar'
-import { ProjectTile } from '@/components/ui/misc'
+import { Kbd, ProjectTile } from '@/components/ui/misc'
 import { useMe } from '@/features/auth/queries'
 import { useProjects } from '@/features/projects/queries'
 import { cn } from '@/lib/cn'
@@ -33,15 +33,19 @@ const SECTIONS: { title: string; items: { to: string; label: string; icon: Icon;
 
 const PROJECT_SHORTCUTS = 5
 
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+
 interface SidebarProps {
   /** Icon-only rail (desktop). */
   collapsed?: boolean
   onToggleCollapse?: () => void
   /** Called after navigating — closes the mobile drawer. */
   onNavigate?: () => void
+  /** Opens the search / command palette. */
+  onOpenPalette?: () => void
 }
 
-export function Sidebar({ collapsed = false, onToggleCollapse, onNavigate }: SidebarProps) {
+export function Sidebar({ collapsed = false, onToggleCollapse, onNavigate, onOpenPalette }: SidebarProps) {
   const me = useMe()
   const groupId = useId()
   const { data: projects } = useProjects()
@@ -73,6 +77,18 @@ export function Sidebar({ collapsed = false, onToggleCollapse, onNavigate }: Sid
           </button>
         ) : null}
       </div>
+
+      {onOpenPalette ? (
+        <div className={cn('shrink-0 px-3 pt-3', collapsed && 'px-2')}>
+          <SearchButton
+            collapsed={collapsed}
+            onClick={() => {
+              onNavigate?.() // close the mobile drawer first
+              onOpenPalette()
+            }}
+          />
+        </div>
+      ) : null}
 
       <nav className="scrollbar-thin min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-3" aria-label="Main">
         {SECTIONS.map((section) => (
@@ -137,6 +153,39 @@ export function Sidebar({ collapsed = false, onToggleCollapse, onNavigate }: Sid
         </Link>
       </div>
     </div>
+  )
+}
+
+/** Opens the command palette; replaces the old top bar's search field. */
+function SearchButton({ collapsed, onClick }: { collapsed: boolean; onClick: () => void }) {
+  const shortcut = isMac ? '⌘ K' : 'Ctrl K'
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Search or jump to"
+      aria-keyshortcuts={isMac ? 'Meta+K' : 'Control+K'}
+      title={collapsed ? `Search (${shortcut})` : undefined}
+      className={cn(
+        'group flex h-9 w-full items-center gap-2.5 rounded-lg border border-border bg-surface-2 px-3 text-left',
+        'text-[13px] text-muted transition-[border-color,color] duration-200',
+        'hover:border-border-strong hover:text-fg-2',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+        collapsed && 'justify-center border-transparent bg-transparent px-0 hover:bg-hover',
+      )}
+    >
+      <Search className="size-4 shrink-0" aria-hidden />
+      {collapsed ? null : (
+        <>
+          <span className="flex-1 truncate">Search…</span>
+          {/* No shortcut hint on phone widths, as before. */}
+          <span className="hidden gap-1 sm:flex" aria-hidden>
+            <Kbd>{isMac ? '⌘' : 'Ctrl'}</Kbd>
+            <Kbd>K</Kbd>
+          </span>
+        </>
+      )}
+    </button>
   )
 }
 

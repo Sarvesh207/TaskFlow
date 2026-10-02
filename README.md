@@ -222,7 +222,7 @@ main.tsx
   └── QueryClientProvider (global error handling, session expiry)
         └── RouterProvider
               ├── /login, /register        (public, redirect if signed in)
-              └── AppLayout                (Sidebar · Topbar · Command palette)
+              └── AppLayout                (Sidebar with search · phone header · Command palette)
                     ├── /                  Dashboard
                     ├── /projects          Projects list, /projects/new
                     ├── /projects/:id      ProjectLayout
@@ -268,7 +268,7 @@ frontend/
 │   │   ├── users/              # queries
 │   │   └── theme/              # light / dark / system switcher
 │   ├── components/
-│   │   ├── layout/             # AppLayout, Sidebar, Topbar, CommandPalette
+│   │   ├── layout/             # AppLayout, Sidebar, MobileHeader, CommandPalette
 │   │   └── ui/                 # Button, Modal, Table, Tabs, Pagination, …
 │   ├── lib/                    # api client, query client, permissions,
 │   │                           # formatting, form helpers

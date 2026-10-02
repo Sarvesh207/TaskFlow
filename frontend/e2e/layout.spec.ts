@@ -154,3 +154,110 @@ for (const height of [720, 600]) {
     await page.screenshot({ path: testInfo.outputPath('empty.png') })
   })
 }
+
+test('desktop: no top bar; the content panel starts at the top and search is in the sidebar', async ({ page, team }, testInfo) => {
+  await signIn(page, team.owner)
+  await page.goto(`/projects/${team.project.id}/tasks`)
+  await expect(page.getByRole('link', { name: 'Fix login bug' })).toBeVisible()
+
+  await expect(page.getByRole('button', { name: 'Open navigation' })).toBeHidden()
+  const main = (await page.locator('#main').boundingBox())!
+  expect(main.y).toBeLessThanOrEqual(16)
+  await page.screenshot({ path: testInfo.outputPath('desktop.png') })
+
+  // The only visible search control is the sidebar's, and it opens the palette.
+  await page.getByRole('button', { name: 'Search or jump to' }).click()
+  await expect(page.getByPlaceholder('Search projects, pages and actions…')).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  await page.getByRole('button', { name: 'Collapse sidebar' }).click()
+  await expect(page.getByRole('button', { name: 'Search or jump to' })).toHaveAttribute('title', /^Search \(/)
+  await page.screenshot({ path: testInfo.outputPath('desktop-collapsed.png') })
+  await page.getByRole('button', { name: 'Expand sidebar' }).click()
+})
+
+test('phone: a slim header opens the drawer and search', async ({ page, team }, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await signIn(page, team.owner)
+  await page.goto('/')
+  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
+
+  const header = (await page.getByRole('banner').boundingBox())!
+  expect(header.height).toBeLessThanOrEqual(48)
+  await page.screenshot({ path: testInfo.outputPath('phone.png') })
+
+  await page.getByRole('button', { name: 'Search or jump to' }).click()
+  await expect(page.getByPlaceholder('Search projects, pages and actions…')).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  await page.getByRole('button', { name: 'Open navigation' }).click()
+  const drawer = page.getByRole('dialog', { name: 'Navigation' })
+  await expect(drawer.getByRole('button', { name: 'Settings' })).toBeVisible()
+  await page.waitForTimeout(350) // let the drawer finish sliding in
+  await page.screenshot({ path: testInfo.outputPath('phone-drawer.png') })
+
+  // Search from inside the drawer closes the drawer and opens the palette.
+  await drawer.getByRole('button', { name: 'Search or jump to' }).click()
+  await expect(drawer).toBeHidden()
+  await expect(page.getByPlaceholder('Search projects, pages and actions…')).toBeVisible()
+})
+
+test('wide screen: content keeps the same side padding with the sidebar open or collapsed', async ({ page, team }, testInfo) => {
+  await page.setViewportSize({ width: 1920, height: 900 })
+  await signIn(page, team.owner)
+
+  const paths = [
+    '/',
+    '/projects',
+    '/my-tasks',
+    '/users',
+    `/projects/${team.project.id}`,
+    `/projects/${team.project.id}/tasks`,
+    `/projects/${team.project.id}/members`,
+    `/projects/${team.project.id}/settings`,
+  ]
+
+  for (const collapsed of [false, true]) {
+    await page.goto('/')
+    const toggle = page.getByRole('button', { name: collapsed ? 'Collapse sidebar' : 'Expand sidebar' })
+    if (await toggle.isVisible()) await toggle.click()
+
+    for (const path of paths) {
+      await page.goto(path)
+      await expect(page.locator('#main h1, #main h2').first()).toBeVisible()
+      const gaps = await page.evaluate(() => {
+        const main = document.querySelector('#main')!.getBoundingClientRect()
+        const content = document.querySelector('#main > div')!.getBoundingClientRect()
+        return { left: content.left - main.left, right: main.right - content.right }
+      })
+      // px-8 = 32px, plus the panel's 1px border at most.
+      expect(gaps.left, `${path} left (collapsed=${collapsed})`).toBeLessThanOrEqual(34)
+      expect(gaps.right, `${path} right (collapsed=${collapsed})`).toBeLessThanOrEqual(34)
+    }
+    if (collapsed) {
+      await page.goto('/')
+      await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
+      await page.screenshot({ path: testInfo.outputPath('dashboard-collapsed.png') })
+      await page.goto(`/projects/${team.project.id}/tasks`)
+      await expect(page.getByRole('link', { name: 'Fix login bug' })).toBeVisible()
+      await page.screenshot({ path: testInfo.outputPath('tasks-collapsed.png') })
+    }
+  }
+})
+
+test('task list priority filter is a styled dropdown and filters the table', async ({ page, team }, testInfo) => {
+  await signIn(page, team.owner)
+  await page.goto(`/projects/${team.project.id}/tasks`)
+  await expect(page.getByRole('link', { name: 'Fix login bug' })).toBeVisible() // High
+  await expect(page.getByRole('link', { name: 'Design homepage' })).toBeVisible() // Low
+
+  await page.getByLabel('Filter by priority').click()
+  await expect(page.getByRole('option')).toHaveText(['All Priority', 'Low', 'Medium', 'High'])
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: testInfo.outputPath('priority-filter.png') })
+
+  await page.getByRole('option', { name: 'High', exact: true }).click()
+  await expect(page.getByRole('link', { name: 'Fix login bug' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Design homepage' })).toHaveCount(0)
+  await expect(page.getByLabel('Filter by priority')).toContainText('High')
+})

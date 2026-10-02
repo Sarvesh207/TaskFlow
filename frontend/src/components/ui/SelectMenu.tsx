@@ -26,6 +26,8 @@ interface SelectMenuProps {
   id?: string
   'aria-invalid'?: boolean
   'aria-describedby'?: string
+  /** For a control with no visible <label>, e.g. a list filter. */
+  'aria-label'?: string
 }
 
 // Radix reserves '' for "no selection", so an empty option value travels under this name.

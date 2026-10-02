@@ -6,7 +6,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { Select } from '@/components/ui/form'
+import { SelectMenu } from '@/components/ui/SelectMenu'
 import { SearchInput, Toolbar } from '@/components/ui/misc'
 import { Pagination } from '@/components/ui/Pagination'
 import { RowMenu } from '@/components/ui/RowMenu'
@@ -17,10 +17,10 @@ import { FILL_HEIGHT } from '@/components/layout/fill-height'
 import { useMe } from '@/features/auth/queries'
 import { useProjectContext } from '@/features/projects/project-context'
 import { usePagination } from '@/hooks/usePagination'
-import { PRIORITY, PRIORITY_LEVELS } from '@/lib/domain'
 import { can } from '@/lib/permissions'
 import type { Task } from '@/types/api'
 import { byUrgency, filterTasks, statusTabs, type PriorityFilter, type StatusFilter } from '@/features/tasks/filters'
+import { PRIORITY_FILTER_OPTIONS } from '@/features/tasks/priority-options'
 import { useDeleteTask, useTasks } from '@/features/tasks/queries'
 import { TaskFormModal } from '@/features/tasks/TaskFormModal'
 
@@ -70,19 +70,13 @@ export function ProjectTasksPage() {
             onChange={(e) => setSearch(e.target.value)}
             className="sm:max-w-xs sm:flex-1"
           />
-          <Select
+          <SelectMenu
             aria-label="Filter by priority"
             value={priority}
-            onChange={(e) => setPriority(e.target.value as PriorityFilter)}
+            onValueChange={(v) => setPriority(v as PriorityFilter)}
+            options={PRIORITY_FILTER_OPTIONS}
             className="sm:ml-auto sm:w-40"
-          >
-            <option value="all">All Priority</option>
-            {PRIORITY_LEVELS.map((p) => (
-              <option key={p} value={p}>
-                {PRIORITY[p].label}
-              </option>
-            ))}
-          </Select>
+          />
         </Toolbar>
 
         {isPending ? (
