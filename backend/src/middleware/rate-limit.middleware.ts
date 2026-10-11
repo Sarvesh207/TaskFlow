@@ -44,3 +44,14 @@ export const authRateLimiter = createRateLimiter(
     ? { windowMs: 60_000, max: 1_000_000 }
     : { windowMs: 60_000, max: Number(process.env.AUTH_RATE_LIMIT_MAX) || 10 },
 );
+
+/**
+ * Invite endpoints: sending email costs quota and the token endpoints are
+ * public, so 30 requests per 10 minutes per IP. Off under NODE_ENV=test, like
+ * authRateLimiter.
+ */
+export const inviteRateLimiter = createRateLimiter(
+  process.env.NODE_ENV === "test"
+    ? { windowMs: 60_000, max: 1_000_000 }
+    : { windowMs: 10 * 60_000, max: 30 },
+);

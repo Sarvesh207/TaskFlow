@@ -52,6 +52,13 @@ export type project_members = Prisma.project_membersModel
  */
 export type projects = Prisma.projectsModel
 /**
+ * Model project_invites
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ * The migration also adds a partial unique index (one open invite per project + email);
+ * Prisma only expresses that behind a preview flag, so the service checks it too.
+ */
+export type project_invites = Prisma.project_invitesModel
+/**
  * Model schema_migrations
  * 
  */

@@ -52,11 +52,13 @@ one per attempt.
 | `403` | Authenticated but not allowed to do this |
 | `404` | Resource or route does not exist |
 | `409` | Conflict with existing data: duplicate, or a relation that blocks the change |
+| `410` | An invite link that was already used, cancelled, or has expired |
 | `413` | Body larger than the 1 MB limit |
 | `415` | Unsupported content encoding |
 | `422` | Body parsed as JSON but failed schema validation — **the common one** |
-| `429` | Rate limited (`/auth/login`, `/auth/register`, `/auth/google*`: 10 requests per minute per IP) |
+| `429` | Rate limited (`/auth/login`, `/auth/register`, `/auth/google*`: 10 requests per minute per IP; sending invites and the `/invites/:token` endpoints: 30 per 10 minutes per IP) |
 | `500` | Bug on the server |
+| `502` | The invite email could not be sent; retrying may work |
 | `503` | Database unreachable |
 
 ## Codes
@@ -75,12 +77,17 @@ one per attempt.
 | `GOOGLE_AUTH_FAILED` | 401 | Google sign-in failed: cancelled, bad/expired `state`, failed code exchange, or email linked to another Google account |
 | `GOOGLE_EMAIL_UNVERIFIED` | 403 | Google did not verify the account's email, so it cannot be linked or used |
 | `FORBIDDEN` | 403 | Authenticated, but lacks the role for this action |
+| `INVITE_EMAIL_MISMATCH` | 403 | Signed in with a different email than the invite was sent to |
 | `NOT_FOUND` | 404 | Resource does not exist (or is not visible to this user) |
 | `ROUTE_NOT_FOUND` | 404 | No such endpoint — check the method and path |
 | `CONFLICT` | 409 | Change conflicts with existing data |
-| `ALREADY_EXISTS` | 409 | Unique constraint: that email/member already exists |
+| `ALREADY_EXISTS` | 409 | Unique constraint: that email/member already exists (also: that email already has a pending invite) |
+| `ALREADY_MEMBER` | 409 | Inviting an email that already belongs to the project's owner or a member |
+| `INVITE_INVALID` | 410 | The invite was already accepted by someone else, or was cancelled |
+| `INVITE_EXPIRED` | 410 | The invite is older than 7 days; ask for a new one |
 | `INTERNAL_ERROR` | 500 | Unhandled server bug |
 | `DATABASE_ERROR` | 500 | Malformed query or database engine failure |
+| `EMAIL_FAILED` | 502 | The email provider rejected or failed the invite email; nothing was saved |
 | `SERVICE_UNAVAILABLE` | 503 | Database unreachable; retrying later may work |
 
 ## Examples

@@ -399,6 +399,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 export const ModelName = {
   project_members: 'project_members',
   projects: 'projects',
+  project_invites: 'project_invites',
   schema_migrations: 'schema_migrations',
   tasks: 'tasks',
   user_profiles: 'user_profiles',
@@ -418,7 +419,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "project_members" | "projects" | "schema_migrations" | "tasks" | "user_profiles" | "users"
+    modelProps: "project_members" | "projects" | "project_invites" | "schema_migrations" | "tasks" | "user_profiles" | "users"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -567,6 +568,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.projectsCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.ProjectsCountAggregateOutputType> | number
+        }
+      }
+    }
+    project_invites: {
+      payload: Prisma.$project_invitesPayload<ExtArgs>
+      fields: Prisma.project_invitesFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.project_invitesFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$project_invitesPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.project_invitesFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$project_invitesPayload>
+        }
+        findFirst: {
+          args: Prisma.project_invitesFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$project_invitesPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.project_invitesFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$project_invitesPayload>
+        }
+        findMany: {
+          args: Prisma.project_invitesFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$project_invitesPayload>[]
+        }
+        create: {
+          args: Prisma.project_invitesCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$project_invitesPayload>
+        }
+        createMany: {
+          args: Prisma.project_invitesCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.project_invitesCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$project_invitesPayload>[]
+        }
+        delete: {
+          args: Prisma.project_invitesDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$project_invitesPayload>
+        }
+        update: {
+          args: Prisma.project_invitesUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$project_invitesPayload>
+        }
+        deleteMany: {
+          args: Prisma.project_invitesDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.project_invitesUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.project_invitesUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$project_invitesPayload>[]
+        }
+        upsert: {
+          args: Prisma.project_invitesUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$project_invitesPayload>
+        }
+        aggregate: {
+          args: Prisma.Project_invitesAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateProject_invites>
+        }
+        groupBy: {
+          args: Prisma.project_invitesGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Project_invitesGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.project_invitesCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Project_invitesCountAggregateOutputType> | number
         }
       }
     }
@@ -929,6 +1004,23 @@ export const ProjectsScalarFieldEnum = {
 export type ProjectsScalarFieldEnum = (typeof ProjectsScalarFieldEnum)[keyof typeof ProjectsScalarFieldEnum]
 
 
+export const Project_invitesScalarFieldEnum = {
+  id: 'id',
+  project_id: 'project_id',
+  email: 'email',
+  role: 'role',
+  token_hash: 'token_hash',
+  invited_by: 'invited_by',
+  expires_at: 'expires_at',
+  accepted_at: 'accepted_at',
+  accepted_by: 'accepted_by',
+  revoked_at: 'revoked_at',
+  created_at: 'created_at'
+} as const
+
+export type Project_invitesScalarFieldEnum = (typeof Project_invitesScalarFieldEnum)[keyof typeof Project_invitesScalarFieldEnum]
+
+
 export const Schema_migrationsScalarFieldEnum = {
   version: 'version'
 } as const
@@ -1257,6 +1349,7 @@ export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaC
 export type GlobalOmitConfig = {
   project_members?: Prisma.project_membersOmit
   projects?: Prisma.projectsOmit
+  project_invites?: Prisma.project_invitesOmit
   schema_migrations?: Prisma.schema_migrationsOmit
   tasks?: Prisma.tasksOmit
   user_profiles?: Prisma.user_profilesOmit

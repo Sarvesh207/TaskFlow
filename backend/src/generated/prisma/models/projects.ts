@@ -201,6 +201,7 @@ export type projectsWhereInput = {
   project_members?: Prisma.Project_membersListRelationFilter
   users?: Prisma.XOR<Prisma.UsersScalarRelationFilter, Prisma.usersWhereInput>
   tasks?: Prisma.TasksListRelationFilter
+  invites?: Prisma.Project_invitesListRelationFilter
 }
 
 export type projectsOrderByWithRelationInput = {
@@ -214,6 +215,7 @@ export type projectsOrderByWithRelationInput = {
   project_members?: Prisma.project_membersOrderByRelationAggregateInput
   users?: Prisma.usersOrderByWithRelationInput
   tasks?: Prisma.tasksOrderByRelationAggregateInput
+  invites?: Prisma.project_invitesOrderByRelationAggregateInput
 }
 
 export type projectsWhereUniqueInput = Prisma.AtLeast<{
@@ -230,6 +232,7 @@ export type projectsWhereUniqueInput = Prisma.AtLeast<{
   project_members?: Prisma.Project_membersListRelationFilter
   users?: Prisma.XOR<Prisma.UsersScalarRelationFilter, Prisma.usersWhereInput>
   tasks?: Prisma.TasksListRelationFilter
+  invites?: Prisma.Project_invitesListRelationFilter
 }, "id">
 
 export type projectsOrderByWithAggregationInput = {
@@ -268,6 +271,7 @@ export type projectsCreateInput = {
   project_members?: Prisma.project_membersCreateNestedManyWithoutProjectsInput
   users: Prisma.usersCreateNestedOneWithoutProjectsInput
   tasks?: Prisma.tasksCreateNestedManyWithoutProjectsInput
+  invites?: Prisma.project_invitesCreateNestedManyWithoutProjectsInput
 }
 
 export type projectsUncheckedCreateInput = {
@@ -280,6 +284,7 @@ export type projectsUncheckedCreateInput = {
   updated_at?: Date | string | null
   project_members?: Prisma.project_membersUncheckedCreateNestedManyWithoutProjectsInput
   tasks?: Prisma.tasksUncheckedCreateNestedManyWithoutProjectsInput
+  invites?: Prisma.project_invitesUncheckedCreateNestedManyWithoutProjectsInput
 }
 
 export type projectsUpdateInput = {
@@ -292,6 +297,7 @@ export type projectsUpdateInput = {
   project_members?: Prisma.project_membersUpdateManyWithoutProjectsNestedInput
   users?: Prisma.usersUpdateOneRequiredWithoutProjectsNestedInput
   tasks?: Prisma.tasksUpdateManyWithoutProjectsNestedInput
+  invites?: Prisma.project_invitesUpdateManyWithoutProjectsNestedInput
 }
 
 export type projectsUncheckedUpdateInput = {
@@ -304,6 +310,7 @@ export type projectsUncheckedUpdateInput = {
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   project_members?: Prisma.project_membersUncheckedUpdateManyWithoutProjectsNestedInput
   tasks?: Prisma.tasksUncheckedUpdateManyWithoutProjectsNestedInput
+  invites?: Prisma.project_invitesUncheckedUpdateManyWithoutProjectsNestedInput
 }
 
 export type projectsCreateManyInput = {
@@ -402,6 +409,20 @@ export type Enumproject_statusFieldUpdateOperationsInput = {
   set?: $Enums.project_status
 }
 
+export type projectsCreateNestedOneWithoutInvitesInput = {
+  create?: Prisma.XOR<Prisma.projectsCreateWithoutInvitesInput, Prisma.projectsUncheckedCreateWithoutInvitesInput>
+  connectOrCreate?: Prisma.projectsCreateOrConnectWithoutInvitesInput
+  connect?: Prisma.projectsWhereUniqueInput
+}
+
+export type projectsUpdateOneRequiredWithoutInvitesNestedInput = {
+  create?: Prisma.XOR<Prisma.projectsCreateWithoutInvitesInput, Prisma.projectsUncheckedCreateWithoutInvitesInput>
+  connectOrCreate?: Prisma.projectsCreateOrConnectWithoutInvitesInput
+  upsert?: Prisma.projectsUpsertWithoutInvitesInput
+  connect?: Prisma.projectsWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.projectsUpdateToOneWithWhereWithoutInvitesInput, Prisma.projectsUpdateWithoutInvitesInput>, Prisma.projectsUncheckedUpdateWithoutInvitesInput>
+}
+
 export type projectsCreateNestedOneWithoutTasksInput = {
   create?: Prisma.XOR<Prisma.projectsCreateWithoutTasksInput, Prisma.projectsUncheckedCreateWithoutTasksInput>
   connectOrCreate?: Prisma.projectsCreateOrConnectWithoutTasksInput
@@ -467,6 +488,7 @@ export type projectsCreateWithoutProject_membersInput = {
   updated_at?: Date | string | null
   users: Prisma.usersCreateNestedOneWithoutProjectsInput
   tasks?: Prisma.tasksCreateNestedManyWithoutProjectsInput
+  invites?: Prisma.project_invitesCreateNestedManyWithoutProjectsInput
 }
 
 export type projectsUncheckedCreateWithoutProject_membersInput = {
@@ -478,6 +500,7 @@ export type projectsUncheckedCreateWithoutProject_membersInput = {
   created_at?: Date | string | null
   updated_at?: Date | string | null
   tasks?: Prisma.tasksUncheckedCreateNestedManyWithoutProjectsInput
+  invites?: Prisma.project_invitesUncheckedCreateNestedManyWithoutProjectsInput
 }
 
 export type projectsCreateOrConnectWithoutProject_membersInput = {
@@ -505,6 +528,7 @@ export type projectsUpdateWithoutProject_membersInput = {
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   users?: Prisma.usersUpdateOneRequiredWithoutProjectsNestedInput
   tasks?: Prisma.tasksUpdateManyWithoutProjectsNestedInput
+  invites?: Prisma.project_invitesUpdateManyWithoutProjectsNestedInput
 }
 
 export type projectsUncheckedUpdateWithoutProject_membersInput = {
@@ -515,6 +539,71 @@ export type projectsUncheckedUpdateWithoutProject_membersInput = {
   owner_id?: Prisma.StringFieldUpdateOperationsInput | string
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tasks?: Prisma.tasksUncheckedUpdateManyWithoutProjectsNestedInput
+  invites?: Prisma.project_invitesUncheckedUpdateManyWithoutProjectsNestedInput
+}
+
+export type projectsCreateWithoutInvitesInput = {
+  id?: string
+  name: string
+  description?: string | null
+  status?: $Enums.project_status
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  project_members?: Prisma.project_membersCreateNestedManyWithoutProjectsInput
+  users: Prisma.usersCreateNestedOneWithoutProjectsInput
+  tasks?: Prisma.tasksCreateNestedManyWithoutProjectsInput
+}
+
+export type projectsUncheckedCreateWithoutInvitesInput = {
+  id?: string
+  name: string
+  description?: string | null
+  status?: $Enums.project_status
+  owner_id: string
+  created_at?: Date | string | null
+  updated_at?: Date | string | null
+  project_members?: Prisma.project_membersUncheckedCreateNestedManyWithoutProjectsInput
+  tasks?: Prisma.tasksUncheckedCreateNestedManyWithoutProjectsInput
+}
+
+export type projectsCreateOrConnectWithoutInvitesInput = {
+  where: Prisma.projectsWhereUniqueInput
+  create: Prisma.XOR<Prisma.projectsCreateWithoutInvitesInput, Prisma.projectsUncheckedCreateWithoutInvitesInput>
+}
+
+export type projectsUpsertWithoutInvitesInput = {
+  update: Prisma.XOR<Prisma.projectsUpdateWithoutInvitesInput, Prisma.projectsUncheckedUpdateWithoutInvitesInput>
+  create: Prisma.XOR<Prisma.projectsCreateWithoutInvitesInput, Prisma.projectsUncheckedCreateWithoutInvitesInput>
+  where?: Prisma.projectsWhereInput
+}
+
+export type projectsUpdateToOneWithWhereWithoutInvitesInput = {
+  where?: Prisma.projectsWhereInput
+  data: Prisma.XOR<Prisma.projectsUpdateWithoutInvitesInput, Prisma.projectsUncheckedUpdateWithoutInvitesInput>
+}
+
+export type projectsUpdateWithoutInvitesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.Enumproject_statusFieldUpdateOperationsInput | $Enums.project_status
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  project_members?: Prisma.project_membersUpdateManyWithoutProjectsNestedInput
+  users?: Prisma.usersUpdateOneRequiredWithoutProjectsNestedInput
+  tasks?: Prisma.tasksUpdateManyWithoutProjectsNestedInput
+}
+
+export type projectsUncheckedUpdateWithoutInvitesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.Enumproject_statusFieldUpdateOperationsInput | $Enums.project_status
+  owner_id?: Prisma.StringFieldUpdateOperationsInput | string
+  created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  project_members?: Prisma.project_membersUncheckedUpdateManyWithoutProjectsNestedInput
   tasks?: Prisma.tasksUncheckedUpdateManyWithoutProjectsNestedInput
 }
 
@@ -527,6 +616,7 @@ export type projectsCreateWithoutTasksInput = {
   updated_at?: Date | string | null
   project_members?: Prisma.project_membersCreateNestedManyWithoutProjectsInput
   users: Prisma.usersCreateNestedOneWithoutProjectsInput
+  invites?: Prisma.project_invitesCreateNestedManyWithoutProjectsInput
 }
 
 export type projectsUncheckedCreateWithoutTasksInput = {
@@ -538,6 +628,7 @@ export type projectsUncheckedCreateWithoutTasksInput = {
   created_at?: Date | string | null
   updated_at?: Date | string | null
   project_members?: Prisma.project_membersUncheckedCreateNestedManyWithoutProjectsInput
+  invites?: Prisma.project_invitesUncheckedCreateNestedManyWithoutProjectsInput
 }
 
 export type projectsCreateOrConnectWithoutTasksInput = {
@@ -565,6 +656,7 @@ export type projectsUpdateWithoutTasksInput = {
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   project_members?: Prisma.project_membersUpdateManyWithoutProjectsNestedInput
   users?: Prisma.usersUpdateOneRequiredWithoutProjectsNestedInput
+  invites?: Prisma.project_invitesUpdateManyWithoutProjectsNestedInput
 }
 
 export type projectsUncheckedUpdateWithoutTasksInput = {
@@ -576,6 +668,7 @@ export type projectsUncheckedUpdateWithoutTasksInput = {
   created_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   project_members?: Prisma.project_membersUncheckedUpdateManyWithoutProjectsNestedInput
+  invites?: Prisma.project_invitesUncheckedUpdateManyWithoutProjectsNestedInput
 }
 
 export type projectsCreateWithoutUsersInput = {
@@ -587,6 +680,7 @@ export type projectsCreateWithoutUsersInput = {
   updated_at?: Date | string | null
   project_members?: Prisma.project_membersCreateNestedManyWithoutProjectsInput
   tasks?: Prisma.tasksCreateNestedManyWithoutProjectsInput
+  invites?: Prisma.project_invitesCreateNestedManyWithoutProjectsInput
 }
 
 export type projectsUncheckedCreateWithoutUsersInput = {
@@ -598,6 +692,7 @@ export type projectsUncheckedCreateWithoutUsersInput = {
   updated_at?: Date | string | null
   project_members?: Prisma.project_membersUncheckedCreateNestedManyWithoutProjectsInput
   tasks?: Prisma.tasksUncheckedCreateNestedManyWithoutProjectsInput
+  invites?: Prisma.project_invitesUncheckedCreateNestedManyWithoutProjectsInput
 }
 
 export type projectsCreateOrConnectWithoutUsersInput = {
@@ -657,6 +752,7 @@ export type projectsUpdateWithoutUsersInput = {
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   project_members?: Prisma.project_membersUpdateManyWithoutProjectsNestedInput
   tasks?: Prisma.tasksUpdateManyWithoutProjectsNestedInput
+  invites?: Prisma.project_invitesUpdateManyWithoutProjectsNestedInput
 }
 
 export type projectsUncheckedUpdateWithoutUsersInput = {
@@ -668,6 +764,7 @@ export type projectsUncheckedUpdateWithoutUsersInput = {
   updated_at?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   project_members?: Prisma.project_membersUncheckedUpdateManyWithoutProjectsNestedInput
   tasks?: Prisma.tasksUncheckedUpdateManyWithoutProjectsNestedInput
+  invites?: Prisma.project_invitesUncheckedUpdateManyWithoutProjectsNestedInput
 }
 
 export type projectsUncheckedUpdateManyWithoutUsersInput = {
@@ -687,11 +784,13 @@ export type projectsUncheckedUpdateManyWithoutUsersInput = {
 export type ProjectsCountOutputType = {
   project_members: number
   tasks: number
+  invites: number
 }
 
 export type ProjectsCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   project_members?: boolean | ProjectsCountOutputTypeCountProject_membersArgs
   tasks?: boolean | ProjectsCountOutputTypeCountTasksArgs
+  invites?: boolean | ProjectsCountOutputTypeCountInvitesArgs
 }
 
 /**
@@ -718,6 +817,13 @@ export type ProjectsCountOutputTypeCountTasksArgs<ExtArgs extends runtime.Types.
   where?: Prisma.tasksWhereInput
 }
 
+/**
+ * ProjectsCountOutputType without action
+ */
+export type ProjectsCountOutputTypeCountInvitesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.project_invitesWhereInput
+}
+
 
 export type projectsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -730,6 +836,7 @@ export type projectsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   project_members?: boolean | Prisma.projects$project_membersArgs<ExtArgs>
   users?: boolean | Prisma.usersDefaultArgs<ExtArgs>
   tasks?: boolean | Prisma.projects$tasksArgs<ExtArgs>
+  invites?: boolean | Prisma.projects$invitesArgs<ExtArgs>
   _count?: boolean | Prisma.ProjectsCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["projects"]>
 
@@ -770,6 +877,7 @@ export type projectsInclude<ExtArgs extends runtime.Types.Extensions.InternalArg
   project_members?: boolean | Prisma.projects$project_membersArgs<ExtArgs>
   users?: boolean | Prisma.usersDefaultArgs<ExtArgs>
   tasks?: boolean | Prisma.projects$tasksArgs<ExtArgs>
+  invites?: boolean | Prisma.projects$invitesArgs<ExtArgs>
   _count?: boolean | Prisma.ProjectsCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type projectsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -785,6 +893,7 @@ export type $projectsPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     project_members: Prisma.$project_membersPayload<ExtArgs>[]
     users: Prisma.$usersPayload<ExtArgs>
     tasks: Prisma.$tasksPayload<ExtArgs>[]
+    invites: Prisma.$project_invitesPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1191,6 +1300,7 @@ export interface Prisma__projectsClient<T, Null = never, ExtArgs extends runtime
   project_members<T extends Prisma.projects$project_membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.projects$project_membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$project_membersPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   users<T extends Prisma.usersDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.usersDefaultArgs<ExtArgs>>): Prisma.Prisma__usersClient<runtime.Types.Result.GetResult<Prisma.$usersPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   tasks<T extends Prisma.projects$tasksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.projects$tasksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$tasksPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  invites<T extends Prisma.projects$invitesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.projects$invitesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$project_invitesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1673,6 +1783,30 @@ export type projects$tasksArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.TasksScalarFieldEnum | Prisma.TasksScalarFieldEnum[]
+}
+
+/**
+ * projects.invites
+ */
+export type projects$invitesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the project_invites
+   */
+  select?: Prisma.project_invitesSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the project_invites
+   */
+  omit?: Prisma.project_invitesOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.project_invitesInclude<ExtArgs> | null
+  where?: Prisma.project_invitesWhereInput
+  orderBy?: Prisma.project_invitesOrderByWithRelationInput | Prisma.project_invitesOrderByWithRelationInput[]
+  cursor?: Prisma.project_invitesWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Project_invitesScalarFieldEnum | Prisma.Project_invitesScalarFieldEnum[]
 }
 
 /**

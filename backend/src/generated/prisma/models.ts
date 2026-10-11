@@ -10,6 +10,7 @@
  */
 export type * from './models/project_members.ts'
 export type * from './models/projects.ts'
+export type * from './models/project_invites.ts'
 export type * from './models/schema_migrations.ts'
 export type * from './models/tasks.ts'
 export type * from './models/user_profiles.ts'
