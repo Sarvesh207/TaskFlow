@@ -54,12 +54,20 @@ export function useRegister() {
   })
 }
 
+/**
+ * Set when the user signs out on purpose (not when a session expires), so
+ * <RequireAuth> sends them to the landing page instead of /login. Any new
+ * session clears it, since removeUserData drops every query except `me`.
+ */
+export const signedOutKey = ['signed-out'] as const
+
 export function useLogout() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: () => api.post('/auth/logout'),
     onSettled: () => {
       removeUserData(qc)
+      qc.setQueryData(signedOutKey, true)
       qc.setQueryData(meKey, null)
     },
   })

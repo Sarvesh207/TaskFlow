@@ -12,14 +12,24 @@ async function signOut(user: ReturnType<typeof renderApp>['user']) {
 }
 
 describe('session', () => {
-  it('F1: signing out lands on /login immediately, without another navigation', async () => {
+  it('F1: signing out lands on the landing page, from any page', async () => {
     const { user, router } = renderApp('/profile', { as: IDS.alex })
     expect(await screen.findByRole('heading', { name: 'My Profile' })).toBeInTheDocument()
 
     await signOut(user)
 
-    expect(await screen.findByRole('heading', { name: 'Welcome back' })).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/login')
+    expect(await screen.findByRole('heading', { level: 1, name: /turn ideas into real progress/i })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/')
+  })
+
+  it('signing out from the dashboard also lands on the landing page', async () => {
+    const { user, router } = renderApp('/', { as: IDS.alex })
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+
+    await signOut(user)
+
+    expect(await screen.findByRole('heading', { level: 1, name: /turn ideas into real progress/i })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/')
   })
 
   it('F2: signing in again in the same tab after signing out works', async () => {
@@ -27,6 +37,8 @@ describe('session', () => {
     expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
 
     await signOut(user)
+    await screen.findByRole('heading', { level: 1, name: /turn ideas into real progress/i })
+    await user.click(screen.getAllByRole('link', { name: 'Sign in' })[0]!)
     await screen.findByRole('heading', { name: 'Welcome back' })
 
     await user.type(screen.getByLabelText('Email'), 'jo@example.com')

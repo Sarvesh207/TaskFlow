@@ -120,18 +120,7 @@ function Hero() {
 
       <div className="relative mx-auto max-w-6xl">
         <div className="stagger mx-auto flex max-w-3xl flex-col items-center text-center">
-          <a
-            href="#features"
-            className="group inline-flex items-center gap-2 rounded-full border border-border bg-surface/70 py-1 pr-3 pl-1 text-[12.5px] text-fg-2 backdrop-blur transition-colors hover:border-border-strong"
-          >
-            <span className="rounded-full bg-primary/12 px-2 py-0.5 text-[11px] font-semibold text-primary-soft-fg">
-              New
-            </span>
-            Project management for small teams
-            <ArrowRight className="size-3.5 text-muted transition-transform group-hover:translate-x-0.5" />
-          </a>
-
-          <h1 className="mt-7 text-[44px] leading-[1.02] font-semibold tracking-[-0.035em] sm:text-7xl">
+          <h1 className="text-[44px] leading-[1.02] font-semibold tracking-[-0.035em] sm:text-7xl">
             Turn ideas into{' '}
             <br />
             <span className="text-brand-gradient">real progress.</span>

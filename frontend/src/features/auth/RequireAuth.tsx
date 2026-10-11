@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { lazy, Suspense, useState, type ReactNode } from 'react'
 import { Navigate, useLocation, useSearchParams } from 'react-router'
 import { Logo } from '@/components/brand/Logo'
@@ -6,7 +7,7 @@ import { PageLoader, Spinner } from '@/components/ui/states'
 import { errorMessage } from '@/lib/api'
 import { loaders } from '@/router-preload'
 import { MeContext } from './me-context'
-import { useCurrentUser } from './queries'
+import { signedOutKey, useCurrentUser } from './queries'
 import { safeNext } from './redirect'
 
 const LandingPage = lazy(() => loaders.landing().then((m) => ({ default: m.LandingPage })))
@@ -18,8 +19,9 @@ function FullScreen({ children }: { children: ReactNode }) {
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { data: user, isPending, error, refetch } = useCurrentUser()
   const location = useLocation()
-  // Set once a user has been seen, so signing out (or an expired session) on
-  // the home page goes to /login rather than to the landing page.
+  const qc = useQueryClient()
+  // Set once a user has been seen, so an expired session on the home page goes
+  // to /login (to sign straight back in) rather than to the landing page.
   const [wasSignedIn, setWasSignedIn] = useState(false)
   if (user && !wasSignedIn) setWasSignedIn(true)
 
@@ -45,8 +47,11 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   if (!user) {
+    // Signing out on purpose, from any page, ends on the landing page.
+    const signedOut = qc.getQueryData<boolean>(signedOutKey) === true
+    if (signedOut && location.pathname !== '/') return <Navigate to="/" replace />
     // Signed-out visitors to the home page get the landing page, not the login form.
-    if (location.pathname === '/' && !wasSignedIn) {
+    if (location.pathname === '/' && (!wasSignedIn || signedOut)) {
       return (
         <Suspense fallback={<PageLoader />}>
           <LandingPage />
