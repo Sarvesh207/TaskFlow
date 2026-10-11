@@ -5,42 +5,32 @@ import {
   Cookie,
   FolderKanban,
   KeyRound,
-  LayoutDashboard,
   ListChecks,
   Lock,
   Moon,
-  Search,
   ShieldCheck,
   Sun,
   UserPlus,
-  Users,
   X,
   type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { Logo } from '@/components/brand/Logo'
-import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
 import { buttonClasses } from '@/components/ui/Button'
-import { PriorityBars } from '@/components/ui/SelectMenu'
 import { GoogleButton } from '@/features/auth/GoogleButton'
+import { FeaturesBento, SpotlightCard } from '@/features/landing/Bento'
+import { Navbar } from '@/features/landing/Navbar'
 import { ProductPreview } from '@/features/landing/ProductPreview'
 import { Reveal } from '@/features/landing/Reveal'
 import { cn } from '@/lib/cn'
-import { PROJECT_STATUS, ROLE, TASK_STATUS } from '@/lib/domain'
+import { ROLE } from '@/lib/domain'
 
 /**
  * Public marketing page, shown at `/` to signed-out visitors (signed-in users
  * get the dashboard there). Every feature named here exists in the app.
  */
-
-const NAV_LINKS = [
-  { href: '#features', label: 'Features' },
-  { href: '#how-it-works', label: 'How it works' },
-  { href: '#roles', label: 'Roles' },
-  { href: '#faq', label: 'FAQ' },
-]
 
 const YEAR = new Date().getFullYear()
 
@@ -78,7 +68,7 @@ export function LandingPage() {
 
 function Section({ id, children, className }: { id?: string; children: ReactNode; className?: string }) {
   return (
-    <section id={id} className={cn('scroll-mt-20 px-4 py-16 sm:px-6 sm:py-24', className)}>
+    <section id={id} className={cn('scroll-mt-24 px-4 py-16 sm:px-6 sm:py-24', className)}>
       <div className="mx-auto max-w-6xl">{children}</div>
     </section>
   )
@@ -108,58 +98,11 @@ function IconTile({ icon: Icon, className }: { icon: LucideIcon; className?: str
   )
 }
 
-/* ------------------------------------------------------------------ navbar */
-
-function Navbar() {
-  const [scrolled, setScrolled] = useState(false)
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  return (
-    <header
-      className={cn(
-        'sticky top-0 z-50 border-b transition-[background-color,border-color] duration-300',
-        scrolled ? 'border-border-soft bg-canvas/75 backdrop-blur-xl' : 'border-transparent',
-      )}
-    >
-      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6" aria-label="Main">
-        <Link to="/" aria-label="TaskFlow home">
-          <Logo />
-        </Link>
-        <div className="hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="rounded-lg px-3 py-2 text-[13.5px] text-muted transition-colors hover:text-fg"
-            >
-              {link.label}
-            </a>
-          ))}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Link to="/login" className={buttonClasses('ghost', 'md', 'text-fg-2')}>
-            Sign in
-          </Link>
-          <Link to="/register" className={buttonClasses('primary', 'md')}>
-            Get started
-          </Link>
-        </div>
-      </nav>
-    </header>
-  )
-}
-
 /* -------------------------------------------------------------------- hero */
 
 function Hero() {
   return (
-    <section className="relative px-4 pt-16 pb-10 sm:px-6 sm:pt-24">
+    <section className="relative px-4 pt-32 pb-10 sm:px-6 sm:pt-44">
       {/* Backdrop: a soft brand glow over a grid that fades out downwards. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-0 overflow-hidden">
         <div className="absolute top-[-280px] left-1/2 h-[620px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(59_130_246/0.22),rgb(79_70_229/0.10)_55%,transparent)] blur-2xl" />
@@ -234,7 +177,7 @@ function Problem() {
   const scattered = ['Tasks lost in chat threads', 'Deadlines living in someone’s head', 'Nobody sure who’s doing what']
   return (
     <Section className="pt-8 sm:pt-12">
-      <Reveal className="grid items-center gap-10 rounded-3xl border border-border-soft bg-bg p-6 sm:p-12 lg:grid-cols-2">
+      <Reveal className="grid items-center gap-10 rounded-[32px] border border-border-soft bg-bg p-6 sm:p-12 lg:grid-cols-2">
         <div>
           <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Work scattered everywhere?</h2>
           <p className="mt-4 text-[15px] leading-relaxed text-muted sm:text-base">
@@ -268,189 +211,13 @@ function Problem() {
 
 /* ---------------------------------------------------------------- features */
 
-function FeatureCard({
-  icon,
-  title,
-  children,
-  visual,
-  className,
-  delay,
-}: {
-  icon: LucideIcon
-  title: string
-  children: ReactNode
-  visual: ReactNode
-  className?: string
-  delay?: number
-}) {
-  return (
-    <Reveal delay={delay} className={className}>
-      <article className="group surface-highlight relative flex h-full flex-col overflow-hidden rounded-2xl border border-border-soft bg-bg p-6 transition-colors duration-300 hover:border-border-strong sm:p-7">
-        <IconTile icon={icon} />
-        <h3 className="mt-5 text-[17px] font-semibold tracking-tight">{title}</h3>
-        <p className="mt-2 text-[14px] leading-relaxed text-muted">{children}</p>
-        <div className="mt-6 flex flex-1 items-end">{visual}</div>
-      </article>
-    </Reveal>
-  )
-}
-
 function Features() {
   return (
     <Section id="features">
       <SectionHeading eyebrow="Features" title="Everything a small team needs. Nothing it doesn't.">
         Projects, tasks, people and progress, all connected and easy to follow.
       </SectionHeading>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <FeatureCard
-          className="lg:col-span-2"
-          icon={FolderKanban}
-          title="Projects that stay organized"
-          visual={
-            <div className="w-full space-y-2">
-              {(
-                [
-                  ['Website Relaunch', 'active'],
-                  ['Brand Refresh', 'completed'],
-                  ['2025 Planning', 'archived'],
-                ] as const
-              ).map(([name, status]) => (
-                <div
-                  key={name}
-                  className="flex items-center justify-between rounded-xl border border-border-soft bg-surface px-4 py-2.5"
-                >
-                  <span className="flex items-center gap-2.5 text-[13px] font-medium">
-                    <FolderKanban className="size-4 text-muted" />
-                    {name}
-                  </span>
-                  <Badge tone={PROJECT_STATUS[status].tone}>{PROJECT_STATUS[status].label}</Badge>
-                </div>
-              ))}
-            </div>
-          }
-        >
-          Create a project for each goal and mark it Active, Completed or Archived as it moves along.
-        </FeatureCard>
-
-        <FeatureCard
-          delay={80}
-          icon={ListChecks}
-          title="Tasks with real detail"
-          visual={
-            <div className="w-full rounded-xl border border-border-soft bg-surface p-4">
-              <p className="text-[13px] font-medium">Finalize launch checklist</p>
-              <div className="mt-3 grid grid-cols-2 gap-y-2.5 text-[12px]">
-                <span className="text-subtle">Assignee</span>
-                <span className="flex items-center gap-1.5">
-                  <Avatar name="Aisha Khan" size="xs" /> Aisha
-                </span>
-                <span className="text-subtle">Priority</span>
-                <span className="flex items-center gap-1.5">
-                  <PriorityBars level={3} tone="red" /> High
-                </span>
-                <span className="text-subtle">Due</span>
-                <span className="text-amber-600 dark:text-amber-300">Today</span>
-              </div>
-            </div>
-          }
-        >
-          Every task has a title, description, assignee, due date and Low / Medium / High priority.
-        </FeatureCard>
-
-        <FeatureCard
-          icon={ArrowRight}
-          title="Clear status at every step"
-          visual={
-            <div className="flex w-full flex-wrap items-center gap-2">
-              <Badge tone={TASK_STATUS.pending.tone}>{TASK_STATUS.pending.label}</Badge>
-              <ArrowRight className="size-3.5 text-subtle" />
-              <Badge tone={TASK_STATUS.in_progress.tone}>{TASK_STATUS.in_progress.label}</Badge>
-              <ArrowRight className="size-3.5 text-subtle" />
-              <Badge tone={TASK_STATUS.completed.tone}>{TASK_STATUS.completed.label}</Badge>
-            </div>
-          }
-        >
-          Move tasks from To Do to In Progress to Completed, or cancel what's no longer needed.
-        </FeatureCard>
-
-        <FeatureCard
-          className="lg:col-span-2"
-          delay={80}
-          icon={Users}
-          title="Bring your team in"
-          visual={
-            <div className="flex w-full flex-col gap-2 sm:flex-row">
-              {(
-                [
-                  ['Aisha Khan', 'owner'],
-                  ['Rohan Mehta', 'admin'],
-                  ['Lena Park', 'member'],
-                ] as const
-              ).map(([name, role]) => (
-                <div
-                  key={name}
-                  className="flex flex-1 items-center gap-2.5 rounded-xl border border-border-soft bg-surface px-3 py-2.5"
-                >
-                  <Avatar name={name} size="xs" />
-                  <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{name}</span>
-                  <Badge tone={ROLE[role].tone}>{ROLE[role].label}</Badge>
-                </div>
-              ))}
-            </div>
-          }
-        >
-          Add teammates to a project, give them a role, and assign tasks to the right person.
-        </FeatureCard>
-
-        <FeatureCard
-          className="lg:col-span-2"
-          icon={LayoutDashboard}
-          title="Dashboard at a glance"
-          visual={
-            <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
-              {[
-                ['Projects', '6', 'text-violet-500'],
-                ['Tasks', '48', 'text-blue-500'],
-                ['In Progress', '29%', 'text-sky-500'],
-                ['Completed', '56%', 'text-emerald-500'],
-              ].map(([label, value, tone]) => (
-                <div key={label} className="rounded-xl border border-border-soft bg-surface px-4 py-3">
-                  <p className="text-[11.5px] text-muted">{label}</p>
-                  <p className={cn('figures mt-1 text-2xl font-semibold', tone)}>{value}</p>
-                </div>
-              ))}
-            </div>
-          }
-        >
-          Total projects, total tasks, what's in progress and what's done, with percentages.
-        </FeatureCard>
-
-        <FeatureCard
-          delay={80}
-          icon={Search}
-          title="My Tasks, front and center"
-          visual={
-            <div className="w-full space-y-2">
-              <div className="flex h-9 items-center gap-2 rounded-lg border border-border bg-input px-3 text-[12.5px] text-subtle">
-                <Search className="size-3.5" /> Search tasks…
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {['All Projects', 'High priority', 'In Progress'].map((chip) => (
-                  <span
-                    key={chip}
-                    className="rounded-md border border-border-soft bg-surface px-2 py-1 text-[11.5px] text-fg-2"
-                  >
-                    {chip}
-                  </span>
-                ))}
-              </div>
-            </div>
-          }
-        >
-          Everything assigned to you across all projects. Search and filter by project, priority or status.
-        </FeatureCard>
-      </div>
+      <FeaturesBento />
     </Section>
   )
 }
@@ -528,12 +295,7 @@ function Roles() {
       <div className="grid gap-4 md:grid-cols-3">
         {ROLES.map((r, i) => (
           <Reveal key={r.role} delay={i * 80}>
-            <div
-              className={cn(
-                'surface-highlight h-full rounded-2xl border bg-bg p-6 sm:p-7',
-                r.role === 'owner' ? 'border-primary/35' : 'border-border-soft',
-              )}
-            >
+            <SpotlightCard className={cn('p-6 sm:p-7', r.role === 'owner' && 'border-primary/35')}>
               <Badge tone={ROLE[r.role].tone}>{ROLE[r.role].label}</Badge>
               <p className="mt-4 text-[15px] font-medium">{r.summary}</p>
               <ul className="mt-5 space-y-2.5 border-t border-border-soft pt-5 text-[13.5px]">
@@ -550,7 +312,7 @@ function Roles() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </SpotlightCard>
           </Reveal>
         ))}
       </div>
@@ -573,7 +335,7 @@ function BuiltWithCare() {
       <SectionHeading eyebrow="Built with care" title="Fast, focused and secure" />
       <div className="grid gap-4 lg:grid-cols-2">
         <Reveal>
-          <div className="surface-highlight h-full rounded-2xl border border-border-soft bg-bg p-6 sm:p-8">
+          <SpotlightCard className="p-6 sm:p-8">
             <div className="flex gap-2">
               <IconTile icon={Sun} />
               <IconTile icon={Moon} />
@@ -606,11 +368,11 @@ function BuiltWithCare() {
                 </div>
               ))}
             </div>
-          </div>
+          </SpotlightCard>
         </Reveal>
 
         <Reveal delay={80}>
-          <div className="surface-highlight h-full rounded-2xl border border-border-soft bg-bg p-6 sm:p-8">
+          <SpotlightCard className="p-6 sm:p-8">
             <IconTile icon={ShieldCheck} />
             <h3 className="mt-5 text-[19px] font-semibold tracking-tight">Your data, handled carefully</h3>
             <p className="mt-2 text-[14px] leading-relaxed text-muted">
@@ -627,7 +389,7 @@ function BuiltWithCare() {
                 </li>
               ))}
             </ul>
-          </div>
+          </SpotlightCard>
         </Reveal>
       </div>
     </Section>
@@ -658,7 +420,7 @@ function Faq() {
     <Section id="faq">
       <SectionHeading eyebrow="FAQ" title="Questions, answered" />
       <Reveal className="mx-auto max-w-3xl">
-        <div className="divide-y divide-border-soft overflow-hidden rounded-2xl border border-border-soft bg-bg">
+        <div className="divide-y divide-border-soft overflow-hidden rounded-[28px] border border-border-soft bg-bg">
           {FAQS.map(({ q, a }) => (
             <details key={q} className="group">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 text-[15px] font-medium transition-colors hover:bg-hover [&::-webkit-details-marker]:hidden">
@@ -680,7 +442,7 @@ function FinalCta() {
   return (
     <Section className="pt-4">
       <Reveal>
-        <div className="relative overflow-hidden rounded-3xl border border-border bg-bg px-6 py-16 text-center sm:px-12 sm:py-20">
+        <div className="relative overflow-hidden rounded-[32px] border border-border bg-bg px-6 py-16 text-center sm:px-12 sm:py-20">
           <div
             aria-hidden
             className="pointer-events-none absolute -top-40 left-1/2 h-80 w-[720px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(59_130_246/0.28),transparent)] blur-2xl"
@@ -710,7 +472,7 @@ function FinalCta() {
 
 function Footer() {
   return (
-    <footer className="border-t border-border-soft px-4 py-10 sm:px-6">
+    <footer className="overflow-hidden border-t border-border-soft px-4 pt-10 sm:px-6">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 sm:flex-row">
         <div className="flex flex-col items-center gap-2 sm:items-start">
           <Logo />
@@ -728,6 +490,13 @@ function Footer() {
           </Link>
         </nav>
       </div>
+      {/* Oversized wordmark that fades into the bottom edge. */}
+      <p
+        aria-hidden
+        className="mx-auto mt-8 -mb-[0.22em] max-w-6xl bg-gradient-to-b from-border-strong to-transparent bg-clip-text text-center text-[22vw] leading-none font-bold tracking-[-0.06em] text-transparent select-none lg:text-[250px]"
+      >
+        TaskFlow
+      </p>
     </footer>
   )
 }
