@@ -395,7 +395,7 @@ const FAQS = [
   },
   {
     q: 'How do I add teammates?',
-    a: 'Once a teammate has created an account, the project owner or an admin can add them from the project’s Members page.',
+    a: 'Today, once a teammate has created an account, the project owner or an admin adds them from the project’s Members page. Inviting teammates by email link, so they can join before signing up, is coming soon.',
   },
   {
     q: 'Who can change task priority?',

@@ -48,8 +48,11 @@ function BentoCard({
   className,
   stageClassName,
   delay,
+  badge,
 }: {
   title: string
+  /** Small chip after the title, e.g. "Coming soon". */
+  badge?: ReactNode
   children: ReactNode
   visual: ReactNode
   className?: string
@@ -79,7 +82,10 @@ function BentoCard({
           <div className="relative w-full px-6">{visual}</div>
         </div>
         <div className="px-4 pt-5 pb-4 sm:px-5">
-          <h3 className="text-[17px] font-semibold tracking-tight">{title}</h3>
+          <h3 className="flex flex-wrap items-center gap-2 text-[17px] font-semibold tracking-tight">
+            {title}
+            {badge}
+          </h3>
           <p className="mt-1.5 text-[14px] leading-relaxed text-muted">{children}</p>
         </div>
       </SpotlightCard>
@@ -308,6 +314,15 @@ function MyTasksVisual() {
   )
 }
 
+/** Marks a feature that is planned but not in the app yet. */
+export function ComingSoon() {
+  return (
+    <span className="inline-flex h-[22px] items-center rounded-full border border-dashed border-primary/40 bg-primary/[0.06] px-2.5 text-[11px] font-medium tracking-normal text-primary-soft-fg">
+      Email invites · Coming soon
+    </span>
+  )
+}
+
 /* -------------------------------------------------------------------- grid */
 
 export function FeaturesBento() {
@@ -335,8 +350,14 @@ export function FeaturesBento() {
         Move tasks from To Do to In Progress to Completed as the work moves.
       </BentoCard>
 
-      <BentoCard className="lg:col-span-3" title="Bring your team in" visual={<TeamVisual />}>
-        Add teammates to a project, give them a role, and assign tasks to the right person.
+      <BentoCard
+        className="lg:col-span-3"
+        title="Bring your team in"
+        badge={<ComingSoon />}
+        visual={<TeamVisual />}
+      >
+        Add teammates to a project, give them a role, and assign tasks to the right person. Soon you'll invite
+        anyone with an email link, even before they have an account.
       </BentoCard>
 
       <BentoCard className="lg:col-span-3" delay={80} title="My Tasks, front and center" visual={<MyTasksVisual />}>
