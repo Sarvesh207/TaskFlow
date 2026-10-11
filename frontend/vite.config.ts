@@ -2,10 +2,10 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath } from 'node:url'
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -16,10 +16,11 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     // Same-origin in dev, so the httpOnly `accessToken` cookie just works.
-    // E2E points this at a backend running on the test database.
+    // API_PROXY_TARGET picks the backend: .env.dev (local) or .env.prod (Render)
+    // via --mode; E2E sets it in the environment, which wins over the files.
     proxy: {
       '/api': {
-        target: process.env.API_PROXY_TARGET ?? 'http://localhost:3000',
+        target: loadEnv(mode, process.cwd(), '').API_PROXY_TARGET || 'http://localhost:3000',
         changeOrigin: true,
       },
     },
@@ -37,4 +38,4 @@ export default defineConfig({
     // First render of each lazy route pays for its import; allow for a cold start.
     testTimeout: 15_000,
   },
-})
+}))

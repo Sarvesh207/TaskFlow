@@ -359,9 +359,12 @@ bun run dev          # http://localhost:3000
 ```bash
 cd frontend
 bun install
-cp .env.example .env # VITE_API_URL=/api/v1 (proxied to :3000)
-bun run dev          # http://localhost:5173
+cp .env.example .env.dev  # API_PROXY_TARGET=http://localhost:3000
+bun run dev               # http://localhost:5173, API proxied to your local backend
 ```
+
+To try the frontend against the deployed backend instead, create `.env.prod` with
+`API_PROXY_TARGET=https://taskflow-ut0q.onrender.com` and run `bun run dev:prod`.
 
 Open <http://localhost:5173>, create an account and start a project.
 
@@ -518,7 +521,8 @@ Check it after deploying (see below).
 | backend  | `bun run typecheck`   | TypeScript check                     |
 | backend  | `bun run db:migrate`  | Apply `db/migrations` (dbmate)       |
 | backend  | `bun run db:rollback` | Undo the last migration              |
-| frontend | `bun run dev`         | Vite dev server                      |
+| frontend | `bun run dev`         | Vite dev server (local backend)      |
+| frontend | `bun run dev:prod`    | Vite dev server (deployed backend)   |
 | frontend | `bun run build`       | Production build to `dist/`          |
 | frontend | `bun run preview`     | Serve the production build           |
 
