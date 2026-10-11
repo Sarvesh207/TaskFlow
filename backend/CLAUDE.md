@@ -90,7 +90,7 @@ Rules encoded today: only the owner may update/delete a project; owner+admin may
 
 ## Routing
 
-Mounted in `src/app.ts` under `/api/v1`: `users`, `auth`, `projects`. Sub-resources are nested inside the projects router rather than in their own modules — `src/modules/project-members/` and `src/modules/tasks/` are empty placeholders, and member and task handlers all live in `projects.{routes,controller,service,repository}.ts`.
+Mounted in `src/app.ts` under `/api/v1`: `users`, `auth`, `projects`, `invites`. Sub-resources are nested inside the projects router rather than in their own modules — `src/modules/project-members/` and `src/modules/tasks/` are empty placeholders, and member and task handlers all live in `projects.{routes,controller,service,repository}.ts`.
 
 ```
 POST   /api/v1/auth/register|login|logout      GET /api/v1/auth/me|google|google/callback
@@ -98,8 +98,12 @@ GET    /api/v1/users            GET|PATCH|DELETE /api/v1/users/:id
 GET|POST /api/v1/projects       GET|PATCH|DELETE /api/v1/projects/:id
 GET|POST /api/v1/projects/:projectId/members    GET|PUT|DELETE .../members/:userId
 GET|POST /api/v1/projects/:projectId/tasks      GET|PUT|DELETE .../tasks/:tasksId
+GET|POST /api/v1/projects/:projectId/invites    POST .../invites/:inviteId/resend   DELETE .../invites/:inviteId
+GET      /api/v1/invites/:token (public)        POST /api/v1/invites/:token/accept
 ```
 
-Note the task route param is spelled `:tasksId` — param schema keys must match it. Every route above is behind `requireAuth` except `auth/register`, `auth/login`, `auth/logout` and the two `auth/google` routes. The users repository selects explicit columns, so `password_hash` is never returned (an integration test enforces this). There is no `/health` endpoint. Unmatched paths return a JSON `404 ROUTE_NOT_FOUND` from `notFoundMiddleware`, and every request is tagged with an `X-Request-Id`.
+Note the task route param is spelled `:tasksId` — param schema keys must match it. Every route above is behind `requireAuth` except `auth/register`, `auth/login`, `auth/logout`, the two `auth/google` routes and `GET /invites/:token`. The users repository selects explicit columns, so `password_hash` is never returned (an integration test enforces this). There is no `/health` endpoint. Unmatched paths return a JSON `404 ROUTE_NOT_FOUND` from `notFoundMiddleware`, and every request is tagged with an `X-Request-Id`.
+
+Invites live in `src/modules/invites/` (their project-scoped routes are mounted from `projects.routes.ts`). Owners and admins invite an email + role; the emailed link carries a random token whose SHA-256 is all the `project_invites` table stores. Accepting requires being signed in with the invited email. Email goes through Resend in `src/modules/invites/mailer.ts` (mocked in tests, like `google.ts`); without `RESEND_API_KEY`, development logs the link instead.
 
 Nested routes for resources that belong to a project; flat routes for addressing a resource directly.

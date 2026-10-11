@@ -44,6 +44,34 @@ export interface ProjectMember {
   users: Pick<User, 'id' | 'email' | 'full_name'>
 }
 
+/** A pending email invite, as owners and admins see it. */
+export interface ProjectInvite {
+  id: string
+  project_id: string
+  email: string
+  role: AssignableRole
+  expires_at: string
+  created_at: string | null
+  inviter: Pick<User, 'id' | 'full_name'>
+}
+
+export type InviteStatus = 'pending' | 'expired' | 'revoked' | 'accepted'
+
+/** What anyone holding an invite link may see (GET /invites/:token). */
+export interface InvitePreview {
+  project: Pick<Project, 'id' | 'name'>
+  inviter: Pick<User, 'full_name'>
+  email: string
+  role: AssignableRole
+  status: InviteStatus
+  expires_at: string
+}
+
+export interface InviteInput {
+  email: string
+  role: AssignableRole
+}
+
 export interface Task {
   id: string
   project_id: string

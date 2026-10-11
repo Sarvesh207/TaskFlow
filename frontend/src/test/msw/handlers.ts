@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import type { MemberRole, Project, ProjectMember, Task, User } from '@/types/api'
-import { db, makeTask, makeUser, PASSWORD } from './db'
+import { db, inviteToken, makeTask, makeUser, PASSWORD, type FakeInvite } from './db'
 
 /**
  * A small fake of the backend: same envelope, codes and authorization rules as
@@ -59,6 +59,36 @@ function access(projectId: string) {
 const privileged = (role: MemberRole) => role === 'owner' || role === 'admin'
 let seq = 1000
 const newId = () => `00000000-0000-4000-8000-${String(++seq).padStart(12, '0')}`
+
+// Invites, mirroring backend/src/modules/invites/invites.service.ts.
+const isOpen = (i: FakeInvite) => !i.accepted_at && !i.revoked_at
+const DAY = 86_400_000
+
+function inviteStatus(i: FakeInvite) {
+  if (i.accepted_at) return 'accepted'
+  if (i.revoked_at) return 'revoked'
+  return new Date(i.expires_at) <= new Date() ? 'expired' : 'pending'
+}
+
+function publicInvite(i: FakeInvite) {
+  const inviter = db.users.find((u) => u.id === i.invited_by)!
+  const { id, project_id, email, role, expires_at, created_at } = i
+  return { id, project_id, email, role, expires_at, created_at, inviter: { id: inviter.id, full_name: inviter.full_name } }
+}
+
+function emailOnProject(project: Project, email: string) {
+  return db.users.some(
+    (u) =>
+      u.email.toLowerCase() === email &&
+      (u.id === project.owner_id || db.members.some((m) => m.project_id === project.id && m.user_id === u.id)),
+  )
+}
+
+function openInvite(projectId: string, inviteId: unknown) {
+  return db.invites.find((i) => i.id === inviteId && i.project_id === projectId && isOpen(i))
+}
+
+const cannotManage = () => forbidden('You do not have permission to perform this action')
 
 export const handlers = [
   // ------------------------------------------------------------------ auth
@@ -222,6 +252,124 @@ export const handlers = [
     if (!privileged(a.role) && a.user.id !== params.userId) return forbidden()
     db.members = db.members.filter((m) => !(m.project_id === a.project.id && m.user_id === params.userId))
     return ok(null, 'Project member removed successfully')
+  }),
+
+  // ------------------------------------------------------------------ invites
+  http.get(`${API}/projects/:id/invites`, ({ params }) => {
+    const a = access(String(params.id))
+    if (a.error) return a.error
+    if (!privileged(a.role)) return cannotManage()
+    const live = db.invites.filter(
+      (i) => i.project_id === a.project.id && isOpen(i) && new Date(i.expires_at) > new Date(),
+    )
+    return ok(live.map(publicInvite))
+  }),
+
+  http.post(`${API}/projects/:id/invites`, async ({ request, params }) => {
+    const body = await record(request)
+    const a = access(String(params.id))
+    if (a.error) return a.error
+    if (!privileged(a.role)) return cannotManage()
+    const email = String(body.email ?? '')
+      .trim()
+      .toLowerCase()
+    if (emailOnProject(a.project, email)) {
+      const message = 'This person is already on the project'
+      return fail(409, 'ALREADY_MEMBER', message, { email: [message] })
+    }
+    if (db.invites.some((i) => i.project_id === a.project.id && i.email === email && isOpen(i))) {
+      const message = 'This email already has a pending invite. Resend it from the pending invites list.'
+      return fail(409, 'ALREADY_EXISTS', message, { email: [message] })
+    }
+    const id = newId()
+    const invite: FakeInvite = {
+      id,
+      project_id: a.project.id,
+      email,
+      role: (body.role as FakeInvite['role']) ?? 'member',
+      token: inviteToken(id.replaceAll('-', '')),
+      invited_by: a.user.id,
+      expires_at: new Date(Date.now() + 7 * DAY).toISOString(),
+      created_at: new Date().toISOString(),
+      accepted_at: null,
+      accepted_by: null,
+      revoked_at: null,
+    }
+    db.invites.push(invite)
+    return ok(publicInvite(invite), 'Invite sent', 201)
+  }),
+
+  http.post(`${API}/projects/:id/invites/:inviteId/resend`, async ({ request, params }) => {
+    await record(request)
+    const a = access(String(params.id))
+    if (a.error) return a.error
+    if (!privileged(a.role)) return cannotManage()
+    const invite = openInvite(a.project.id, params.inviteId)
+    if (!invite) return notFound('Invite not found')
+    invite.token = inviteToken(`r${invite.token}`)
+    invite.expires_at = new Date(Date.now() + 7 * DAY).toISOString()
+    return ok(publicInvite(invite), 'Invite resent')
+  }),
+
+  http.delete(`${API}/projects/:id/invites/:inviteId`, async ({ request, params }) => {
+    await record(request)
+    const a = access(String(params.id))
+    if (a.error) return a.error
+    if (!privileged(a.role)) return cannotManage()
+    const invite = openInvite(a.project.id, params.inviteId)
+    if (!invite) return notFound('Invite not found')
+    invite.revoked_at = new Date().toISOString()
+    return ok(null, 'Invite cancelled')
+  }),
+
+  http.get(`${API}/invites/:token`, ({ params }) => {
+    const invite = db.invites.find((i) => i.token === params.token)
+    if (!invite) return notFound('This invite link is not valid')
+    const project = db.projects.find((p) => p.id === invite.project_id)!
+    const inviter = db.users.find((u) => u.id === invite.invited_by)!
+    return ok({
+      project: { id: project.id, name: project.name },
+      inviter: { full_name: inviter.full_name },
+      email: invite.email,
+      role: invite.role,
+      status: inviteStatus(invite),
+      expires_at: invite.expires_at,
+    })
+  }),
+
+  http.post(`${API}/invites/:token/accept`, async ({ request, params }) => {
+    await record(request)
+    const user = me()
+    if (!user) return unauthorized()
+    const invite = db.invites.find((i) => i.token === params.token)
+    if (!invite) return notFound('This invite link is not valid')
+    const status = inviteStatus(invite)
+    if (status === 'accepted' && invite.accepted_by === user.id) {
+      return ok({ project_id: invite.project_id }, 'Invite accepted')
+    }
+    if (status === 'accepted' || status === 'revoked') {
+      return fail(410, 'INVITE_INVALID', 'This invite has already been used or was cancelled')
+    }
+    if (status === 'expired') return fail(410, 'INVITE_EXPIRED', 'This invite has expired. Ask for a new one.')
+    if (user.email.toLowerCase() !== invite.email) {
+      const message = `This invite was sent to ${invite.email}. Sign in with that email to accept it.`
+      return fail(403, 'INVITE_EMAIL_MISMATCH', message)
+    }
+    const now = new Date().toISOString()
+    invite.accepted_at = now
+    invite.accepted_by = user.id
+    const project = db.projects.find((p) => p.id === invite.project_id)!
+    if (!roleIn(project, user.id)) {
+      db.members.push({
+        project_id: project.id,
+        user_id: user.id,
+        role: invite.role,
+        created_at: now,
+        updated_at: now,
+        users: { id: user.id, email: user.email, full_name: user.full_name },
+      })
+    }
+    return ok({ project_id: invite.project_id }, 'Invite accepted')
   }),
 
   // ------------------------------------------------------------------ tasks

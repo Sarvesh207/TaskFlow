@@ -15,6 +15,7 @@ import { useMe } from '@/features/auth/queries'
 import { useProjectContext, type ProjectPerson } from '@/features/projects/project-context'
 import { formatDate } from '@/lib/format'
 import { can } from '@/lib/permissions'
+import { PendingInvites } from '@/features/invites/PendingInvites'
 import { AddMemberModal } from '@/features/members/AddMemberModal'
 import { MemberDetailsModal } from '@/features/members/MemberDetailsModal'
 import { useRemoveMember } from '@/features/members/queries'
@@ -61,6 +62,8 @@ export function ProjectMembersPage() {
             </Button>
           ) : null}
         </Toolbar>
+
+        {canManage ? <PendingInvites projectId={project.id} projectName={project.name} /> : null}
 
         {filtered.length === 0 ? (
           <EmptyState icon={<Users />} title="No members found" description="Try a different search." />

@@ -53,6 +53,7 @@ export const AnyNull = runtime.AnyNull
 export const ModelName = {
   project_members: 'project_members',
   projects: 'projects',
+  project_invites: 'project_invites',
   schema_migrations: 'schema_migrations',
   tasks: 'tasks',
   user_profiles: 'user_profiles',
@@ -97,6 +98,23 @@ export const ProjectsScalarFieldEnum = {
 } as const
 
 export type ProjectsScalarFieldEnum = (typeof ProjectsScalarFieldEnum)[keyof typeof ProjectsScalarFieldEnum]
+
+
+export const Project_invitesScalarFieldEnum = {
+  id: 'id',
+  project_id: 'project_id',
+  email: 'email',
+  role: 'role',
+  token_hash: 'token_hash',
+  invited_by: 'invited_by',
+  expires_at: 'expires_at',
+  accepted_at: 'accepted_at',
+  accepted_by: 'accepted_by',
+  revoked_at: 'revoked_at',
+  created_at: 'created_at'
+} as const
+
+export type Project_invitesScalarFieldEnum = (typeof Project_invitesScalarFieldEnum)[keyof typeof Project_invitesScalarFieldEnum]
 
 
 export const Schema_migrationsScalarFieldEnum = {

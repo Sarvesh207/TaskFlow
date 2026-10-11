@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, X } from 'lucide-react'
 import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
 import { Field, FormError, Input } from '@/components/ui/form'
@@ -14,6 +14,7 @@ import { AuthDivider, GoogleButton } from '@/features/auth/GoogleButton'
 import { googleErrorMessage } from '@/features/auth/google-error'
 import { PasswordInput } from '@/components/ui/PasswordInput'
 import { useLogin, useRegister } from '@/features/auth/queries'
+import { authCarryOver, safeNext } from '@/features/auth/redirect'
 
 // Same rules as backend/src/modules/auth/auth.schema.ts.
 const PASSWORD_RULES = [
@@ -40,6 +41,9 @@ type Values = z.infer<typeof schema>
 
 export function RegisterPage() {
   const navigate = useNavigate()
+  // An invite link sends people here with their email and a way back (`?next=`).
+  const [params] = useSearchParams()
+  const next = safeNext(params.get('next'))
   const registerUser = useRegister()
   const login = useLogin()
   const [showPassword, setShowPassword] = useState(false)
@@ -50,7 +54,7 @@ export function RegisterPage() {
     setError,
     control,
     formState: { errors },
-  } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { full_name: '', email: '', password: '' } })
+  } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { full_name: '', email: params.get('email') ?? '', password: '' } })
   const password = useWatch({ control, name: 'password' })
 
   const onSubmit = handleSubmit((values) => {
@@ -61,8 +65,8 @@ export function RegisterPage() {
         login.mutate(
           { email: values.email, password: values.password },
           {
-            onSuccess: () => navigate('/', { replace: true }),
-            onError: () => navigate('/login', { replace: true }),
+            onSuccess: () => navigate(next, { replace: true }),
+            onError: () => navigate(`/login${authCarryOver(params)}`, { replace: true }),
           },
         ),
       onError: (error) => {
@@ -108,10 +112,10 @@ export function RegisterPage() {
         </Button>
       </form>
       <AuthDivider />
-      <GoogleButton onError={(code) => setFormError(googleErrorMessage(code))} />
+      <GoogleButton next={next} onError={(code) => setFormError(googleErrorMessage(code))} />
       <p className="mt-8 text-center text-sm text-muted">
         Already have an account?{' '}
-        <Link to="/login" className="font-medium text-primary hover:text-primary-hover">
+        <Link to={`/login${authCarryOver(params)}`} className="font-medium text-primary hover:text-primary-hover">
           Sign in
         </Link>
       </p>

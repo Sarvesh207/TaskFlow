@@ -1,5 +1,12 @@
 import { Router } from "express";
-import { requireAuth, validate } from "../../middleware";
+import { inviteRateLimiter, requireAuth, validate } from "../../middleware";
+import {
+  createInvite,
+  listInvites,
+  resendInvite,
+  revokeInvite,
+} from "../invites/invites.controller";
+import { createInviteSchema, inviteParamsSchema } from "../invites/invites.schema";
 import {
   createProject,
   deleteProject,
@@ -100,6 +107,38 @@ router.delete(
   requireAuth,
   validate({ params: memberParamsSchema }),
   removeProjectMember,
+);
+
+// project invites (owner/admin; the recipient's side is in invites.routes.ts)
+
+router.get(
+  "/:projectId/invites",
+  requireAuth,
+  validate({ params: projectScopedParamSchema }),
+  listInvites,
+);
+
+router.post(
+  "/:projectId/invites",
+  inviteRateLimiter,
+  requireAuth,
+  validate({ params: projectScopedParamSchema, body: createInviteSchema }),
+  createInvite,
+);
+
+router.post(
+  "/:projectId/invites/:inviteId/resend",
+  inviteRateLimiter,
+  requireAuth,
+  validate({ params: inviteParamsSchema }),
+  resendInvite,
+);
+
+router.delete(
+  "/:projectId/invites/:inviteId",
+  requireAuth,
+  validate({ params: inviteParamsSchema }),
+  revokeInvite,
 );
 
 // projects tasks

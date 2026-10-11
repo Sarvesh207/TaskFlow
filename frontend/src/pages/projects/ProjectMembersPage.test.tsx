@@ -5,6 +5,14 @@ import { renderApp } from '@/test/render'
 
 const path = `/projects/${IDS.project}/members`
 
+type User = ReturnType<typeof renderApp>['user']
+
+/** Open the Add Member modal on its "Add existing user" tab (it opens on "Invite by email"). */
+async function openAddExisting(user: User) {
+  await user.click(await screen.findByRole('button', { name: 'Add Member' }))
+  await user.click(within(await screen.findByRole('dialog')).getByRole('tab', { name: 'Add existing user' }))
+}
+
 function userOptions() {
   const dialog = screen.getByRole('dialog')
   const select = within(dialog).getByRole('combobox', { name: 'User' })
@@ -31,7 +39,7 @@ describe('ProjectMembersPage', () => {
 
   it('adds a member, offering only people not already on the project', async () => {
     const { user } = renderApp(path, { as: IDS.alex })
-    await user.click(await screen.findByRole('button', { name: 'Add Member' }))
+    await openAddExisting(user)
 
     await waitFor(() => expect(userOptions()).toContain('Olivia Chen (olivia@example.com)'))
     expect(userOptions().some((o) => o?.includes('Jo Park'))).toBe(false)
@@ -47,7 +55,7 @@ describe('ProjectMembersPage', () => {
 
   it('requires a user to be picked', async () => {
     const { user } = renderApp(path, { as: IDS.alex })
-    await user.click(await screen.findByRole('button', { name: 'Add Member' }))
+    await openAddExisting(user)
     const dialog = await screen.findByRole('dialog')
     await user.click(within(dialog).getByRole('button', { name: 'Add Member' }))
     expect(within(dialog).getByText('Select a user to add')).toBeInTheDocument()
@@ -56,13 +64,13 @@ describe('ProjectMembersPage', () => {
 
   it('F4: someone who signed up after the page loaded appears when the modal reopens', async () => {
     const { user } = renderApp(path, { as: IDS.alex })
-    await user.click(await screen.findByRole('button', { name: 'Add Member' }))
+    await openAddExisting(user)
     await waitFor(() => expect(userOptions()).toContain('Olivia Chen (olivia@example.com)'))
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
     db.users.push(makeUser('00000000-0000-4000-8000-0000000000ff', 'Nina New', 'nina@example.com'))
 
-    await user.click(screen.getByRole('button', { name: 'Add Member' }))
+    await openAddExisting(user)
     await waitFor(() => expect(userOptions()).toContain('Nina New (nina@example.com)'))
   })
 

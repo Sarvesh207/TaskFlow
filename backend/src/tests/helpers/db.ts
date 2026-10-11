@@ -5,7 +5,7 @@ import { assertTestDatabase } from "../test-env";
 export async function resetDb(): Promise<void> {
   assertTestDatabase();
   await prisma.$executeRawUnsafe(
-    "TRUNCATE TABLE tasks, project_members, projects, user_profiles, users RESTART IDENTITY CASCADE",
+    "TRUNCATE TABLE project_invites, tasks, project_members, projects, user_profiles, users RESTART IDENTITY CASCADE",
   );
 }
 

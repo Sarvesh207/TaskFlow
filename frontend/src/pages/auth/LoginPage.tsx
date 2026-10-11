@@ -11,7 +11,7 @@ import { applyFieldErrors } from '@/lib/form'
 import { AuthLayout } from '@/features/auth/AuthLayout'
 import { AuthDivider, GoogleButton } from '@/features/auth/GoogleButton'
 import { googleErrorMessage } from '@/features/auth/google-error'
-import { safeNext } from '@/features/auth/redirect'
+import { authCarryOver, safeNext } from '@/features/auth/redirect'
 import { useLogin } from '@/features/auth/queries'
 
 const schema = z.object({
@@ -45,7 +45,7 @@ export function LoginPage() {
     handleSubmit,
     setError,
     formState: { errors },
-  } = useForm<Values>({ resolver: zodResolver(schema) })
+  } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { email: params.get('email') ?? '', password: '' } })
 
   const onSubmit = handleSubmit((values) => {
     setFormError(null)
@@ -85,7 +85,7 @@ export function LoginPage() {
       <GoogleButton next={safeNext(params.get('next'))} onError={(code) => setFormError(googleErrorMessage(code))} />
       <p className="mt-8 text-center text-sm text-muted">
         Don&apos;t have an account?{' '}
-        <Link to="/register" className="font-medium text-primary hover:text-primary-hover">
+        <Link to={`/register${authCarryOver(params)}`} className="font-medium text-primary hover:text-primary-hover">
           Sign up
         </Link>
       </p>

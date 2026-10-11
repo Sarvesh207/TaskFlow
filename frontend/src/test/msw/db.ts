@@ -1,4 +1,4 @@
-import type { MemberRole, Project, ProjectMember, Task, User } from '@/types/api'
+import type { AssignableRole, MemberRole, Project, ProjectMember, Task, User } from '@/types/api'
 
 /**
  * In-memory backend used by the MSW handlers. Reset before every test, then
@@ -18,6 +18,39 @@ export const IDS = {
   taskSam: '00000000-0000-4000-8000-000000000102',
 } as const
 
+/** An invite as the backend stores it, plus the raw token its email would carry. */
+export interface FakeInvite {
+  id: string
+  project_id: string
+  email: string
+  role: AssignableRole
+  token: string
+  invited_by: string
+  expires_at: string
+  created_at: string
+  accepted_at: string | null
+  accepted_by: string | null
+  revoked_at: string | null
+}
+
+/** A syntactically valid invite token (43 base64url characters). */
+export const inviteToken = (seed: string) => seed.padEnd(43, 'x').slice(0, 43)
+
+export function makeInvite(overrides: Partial<FakeInvite> & Pick<FakeInvite, 'id' | 'email'>): FakeInvite {
+  return {
+    project_id: IDS.project,
+    role: 'member',
+    token: inviteToken(overrides.id.replaceAll('-', '')),
+    invited_by: IDS.alex,
+    expires_at: new Date(Date.now() + 6 * 86_400_000).toISOString(),
+    created_at: '2026-09-01T10:00:00.000Z',
+    accepted_at: null,
+    accepted_by: null,
+    revoked_at: null,
+    ...overrides,
+  }
+}
+
 export interface RecordedRequest {
   method: string
   path: string
@@ -29,6 +62,7 @@ export const db = {
   projects: [] as Project[],
   members: [] as ProjectMember[],
   tasks: [] as Task[],
+  invites: [] as FakeInvite[],
   sessionUserId: null as string | null,
   requests: [] as RecordedRequest[],
 }
@@ -96,6 +130,7 @@ export function resetDb() {
     makeTask({ id: IDS.taskJo, title: 'Fix login bug', assigned_to: IDS.jo, priority: 5, status: 'in_progress' }),
     makeTask({ id: IDS.taskSam, title: 'Design homepage', assigned_to: IDS.sam, priority: 1 }),
   ]
+  db.invites = []
   db.sessionUserId = null
   db.requests = []
 }

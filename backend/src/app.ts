@@ -3,6 +3,7 @@ import { errorMiddleware, notFoundMiddleware, requestId } from "./middleware";
 import usersRouter from "./modules/users/users.routes";
 import authRouter from "./modules/auth/auth.routes";
 import projectsRouter from "./modules/projects/projects.routes";
+import invitesRouter from "./modules/invites/invites.routes";
 import healthRouter from "./modules/health/health.routes";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -38,6 +39,7 @@ app.use("/api/v1/health", healthRouter);
 app.use("/api/v1/users", usersRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/projects", projectsRouter);
+app.use("/api/v1/invites", invitesRouter);
 
 // Unmatched routes fall through to a JSON 404 instead of Express's HTML page.
 app.use(notFoundMiddleware);
