@@ -35,6 +35,11 @@ export const routes: RouteObject[] = [
     path: '/auth/google/done',
     element: <Suspense fallback={<PageLoader />}>{page(loaders.googleDone, 'GoogleDonePage')}</Suspense>,
   },
+  // Not <Public>: a signed-in user opens their invite here too.
+  {
+    path: '/invite/:token',
+    element: <Suspense fallback={<PageLoader />}>{page(loaders.invite, 'InvitePage')}</Suspense>,
+  },
   {
     element: <AppLayout />,
     children: [
