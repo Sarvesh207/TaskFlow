@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { Logo } from '@/components/brand/Logo'
 import { buttonClasses } from '@/components/ui/Button'
@@ -34,33 +34,54 @@ function useActiveSection() {
   return active
 }
 
+/** How far (px) the page scrolls while the navbar morphs into the capsule. */
+const MORPH_DISTANCE = 160
+
 /**
- * Floating capsule navbar. At the top of the page it spans the content width;
- * once scrolled it tightens into a frosted pill with rounded ends.
+ * Floating capsule navbar. At the top of the page it spans the content width
+ * with no chrome; as the page scrolls it gradually narrows and its frosted
+ * pill fades in. Progress is a CSS variable (`--p`, 0 → 1) written straight to
+ * the element on each frame, so scrolling never re-renders React.
  */
 export function Navbar() {
-  const [scrolled, setScrolled] = useState(false)
+  const navRef = useRef<HTMLElement>(null)
   const active = useActiveSection()
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24)
-    onScroll()
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const t = Math.min(Math.max(window.scrollY / MORPH_DISTANCE, 0), 1)
+      // Smoothstep: starts and ends gently instead of moving at a constant rate.
+      navRef.current?.style.setProperty('--p', String(t * t * (3 - 2 * t)))
+    }
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+    update()
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      cancelAnimationFrame(frame)
+    }
   }, [])
 
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center px-3 pt-3 sm:pt-4">
       <nav
+        ref={navRef}
         aria-label="Main"
-        className={cn(
-          'pointer-events-auto flex h-14 w-full items-center justify-between gap-3 rounded-full border pr-2 pl-4 sm:pl-5',
-          'transition-[max-width,background-color,border-color,box-shadow] duration-500 ease-out-expo',
-          scrolled
-            ? 'max-w-[820px] border-border bg-bg/70 shadow-[0_12px_40px_-12px_var(--shadow-color),inset_0_1px_0_var(--highlight)] backdrop-blur-xl backdrop-saturate-150'
-            : 'max-w-6xl border-transparent bg-transparent',
-        )}
+        // A short transition smooths the jumps of a mouse wheel; on a trackpad
+        // the change follows the finger.
+        className="pointer-events-auto relative isolate flex h-14 w-full items-center justify-between gap-3 rounded-full pr-2 pl-4 transition-[max-width] duration-300 ease-out-expo [--p:0] sm:pl-5"
+        style={{ maxWidth: 'calc(72rem - (72rem - 820px) * var(--p))' }}
       >
+        {/* The capsule itself: border, frosted fill and shadow fade in together. */}
+        <span
+          aria-hidden
+          className="absolute inset-0 -z-10 rounded-full border border-border bg-bg/70 shadow-[0_12px_40px_-12px_var(--shadow-color),inset_0_1px_0_var(--highlight)] backdrop-blur-xl backdrop-saturate-150 transition-opacity duration-300 ease-out-expo"
+          style={{ opacity: 'var(--p)' }}
+        />
         <Link to="/" aria-label="TaskFlow home" className="shrink-0">
           <Logo />
         </Link>
