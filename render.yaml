@@ -8,15 +8,15 @@ services:
     name: taskflow-api
     runtime: node
     plan: free
-    # Same region as the Neon database (AWS Singapore): every request makes database
+    # Same region as the Supabase database (AWS ap-southeast-1, Singapore): every request makes database
     # round trips, so crossing an ocean here would slow the whole app. Not changeable
     # later without recreating the service.
     region: singapore
     rootDir: backend
     buildCommand: bun install --frozen-lockfile --production
     startCommand: bun src/server.ts
-    # Liveness only: Render calls this every 5 s, and it must not query the database
-    # (that would keep Neon's free compute awake all month). /api/v1/health/db is for manual checks.
+    # Liveness only: Render calls this every 5 s and it never queries the database, so
+    # health checks put no load on the pooler. /api/v1/health/db is for manual checks.
     healthCheckPath: /api/v1/health
     autoDeployTrigger: commit
     envVars:
@@ -37,7 +37,7 @@ services:
       - key: EMAIL_FROM
         value: TaskFlow <invites@taskflow.sarveshgaynar.in>
       # Secrets: values are entered in the Render dashboard, never committed.
-      - key: DATABASE_URL # Neon *pooled* connection string
+      - key: DATABASE_URL # Supabase *session pooler* string + uselibpqcompat=true&sslmode=require
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
