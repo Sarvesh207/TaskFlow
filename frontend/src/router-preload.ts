@@ -7,6 +7,7 @@
 type Loader = () => Promise<unknown>
 
 export const loaders = {
+  landing: () => import('@/pages/LandingPage'),
   login: () => import('@/pages/auth/LoginPage'),
   register: () => import('@/pages/auth/RegisterPage'),
   googleDone: () => import('@/pages/auth/GoogleDonePage'),

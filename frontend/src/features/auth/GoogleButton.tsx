@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react'
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { buttonClasses } from '@/components/ui/Button'
+import { cn } from '@/lib/cn'
 import { GOOGLE_AUTH_CHANNEL, googleAuthUrl, openGooglePopup, type GoogleAuthResult } from './google-popup'
 import { startSession } from './queries'
 import { safeNext } from './redirect'
@@ -13,7 +14,15 @@ import { safeNext } from './redirect'
  * popup is blocked, the link falls back to a full-page redirect through the
  * same flow.
  */
-export function GoogleButton({ next = '/', onError }: { next?: string; onError?: (code: string) => void }) {
+export function GoogleButton({
+  next = '/',
+  onError,
+  className,
+}: {
+  next?: string
+  onError?: (code: string) => void
+  className?: string
+}) {
   const qc = useQueryClient()
   const navigate = useNavigate()
   const [waiting, setWaiting] = useState(false)
@@ -62,7 +71,7 @@ export function GoogleButton({ next = '/', onError }: { next?: string; onError?:
       href={googleAuthUrl(next)}
       onClick={onClick}
       aria-busy={waiting || undefined}
-      className={buttonClasses('secondary', 'md', 'w-full')}
+      className={buttonClasses('secondary', 'md', cn('w-full', className))}
     >
       {waiting ? <Loader2 className="animate-spin" aria-hidden /> : <GoogleLogo />}
       {waiting ? 'Waiting for Google…' : 'Continue with Google'}
